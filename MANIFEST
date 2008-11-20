@@ -1,0 +1,11 @@
+Build.PL
+examples/async.pl
+examples/lineeditor.pl
+examples/simple.pl
+lib/Term/TermKey.pm
+lib/Term/TermKey.xs
+MANIFEST			This list of files
+t/00use.t
+typemap
+Makefile.PL
+META.yml

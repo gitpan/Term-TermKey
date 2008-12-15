@@ -14,7 +14,7 @@ my $line = "";
 $| = 1;
 
 my %key_handlers = (
-   "Ctrl-C" => sub { exit 0 },
+   "Ctrl-c" => sub { exit 0 },
 
    "Enter"  => sub { 
      print "\nThe line is: $line\n";

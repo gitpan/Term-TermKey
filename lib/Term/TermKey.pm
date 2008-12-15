@@ -2,7 +2,7 @@ package Term::TermKey;
 
 use strict;
 
-our $VERSION = "0.01";
+our $VERSION = "0.02";
 
 use base qw( DynaLoader );
 use base qw( Exporter );
@@ -369,8 +369,8 @@ This program just prints every keypress until the user presses C<Ctrl-C>.
     print "Got key: ".$tk->format_key( $key, FORMAT_VIM )."\n";
 
     last if $key->type_is_unicode and 
-            $key->modifiers & KEYMOD_CTRL and
-            $key->codepoint == ord('C');
+            lc $key->utf8 eq "c" and
+            $key->modifiers & KEYMOD_CTRL;
  }
 
 =head2 Configuration of custom keypresses
@@ -393,7 +393,7 @@ many features in a true line editor like F<readline>.
  $| = 1;
 
  my %key_handlers = (
-    "Ctrl-C" => sub { exit 0 },
+    "Ctrl-c" => sub { exit 0 },
 
     "Enter"  => sub { 
        print "\nThe line is: $line\n";
@@ -432,8 +432,57 @@ many features in a true line editor like F<readline>.
 Because the C<getkey()> method performs no IO itself, it can be combined with
 the C<advisereadable()> method in an asynchronous program.
 
-The full text of this program is long; see the F<examples/async.pl> file in
-the distribution.
+ use IO::Select;
+ use Term::TermKey qw(
+    FLAG_UTF8 KEYMOD_CTRL RES_KEY RES_AGAIN RES_EOF FORMAT_VIM
+ );
+ 
+ my $select = IO::Select->new();
+ 
+ my $tk = Term::TermKey->new(\*STDIN);
+ $select->add(\*STDIN);
+ 
+ # perl sucks and doesn't have a way to do this automatically
+ binmode( STDOUT, ":utf8" ) if $tk->get_flags & FLAG_UTF8;
+ 
+ sub on_key
+ {
+    my ( $tk, $key ) = @_;
+ 
+    print "You pressed " . $tk->format_key( $key, FORMAT_VIM ) . "\n";
+ 
+    exit if $key->type_is_unicode and
+            lc $key->utf8 eq "c" and
+            $key->modifiers & KEYMOD_CTRL;
+ }
+ 
+ my $again = 0;
+ 
+ while(1) {
+    my $timeout = $again ? $tk->get_waittime/1000 : undef;
+    my @ready = $select->can_read($timeout);
+ 
+    if( !@ready ) {
+       my $ret;
+       while( ( $ret = $tk->getkey_force( my $key ) ) == RES_KEY ) {
+          on_key( $tk, $key );
+       }
+    }
+ 
+    while( my $fh = shift @ready ) {
+       if( $fh == \*STDIN ) {
+          $tk->advisereadable;
+          my $ret;
+          while( ( $ret = $tk->getkey( my $key ) ) == RES_KEY ) {
+             on_key( $tk, $key );
+          }
+ 
+          $again = ( $ret == RES_AGAIN );
+          exit if $ret == RES_EOF;
+       }
+       # Deal with other filehandles here
+    }
+ }
 
 See also the L<Term::TermKey::Async> module which provides a convenient
 wrapping of C<Term::TermKey> for an L<IO::Async>-based program.

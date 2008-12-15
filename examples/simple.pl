@@ -13,6 +13,6 @@ while( ( my $ret = $tk->waitkey( my $key ) ) != RES_EOF ) {
    print "Got key: ".$tk->format_key( $key, FORMAT_VIM )."\n";
 
    last if $key->type_is_unicode and 
-           $key->modifiers & KEYMOD_CTRL and 
-           $key->codepoint == ord('C');
+           lc $key->utf8 eq "c" and
+           $key->modifiers & KEYMOD_CTRL;
 }

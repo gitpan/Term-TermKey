@@ -6,7 +6,8 @@ use Module::Build;
 eval { require ExtUtils::PkgConfig; } or
    die "OS unsupported - no ExtUtils::PkgConfig\n";
 
-ExtUtils::PkgConfig->find("termkey");
+eval { ExtUtils::PkgConfig->find("termkey"); } or
+   die "OS unsupported - pkg-config cannot find termkey\n";
 
 my $cflags = ExtUtils::PkgConfig->cflags("termkey");
 my $libs   = ExtUtils::PkgConfig->libs("termkey");

@@ -4,10 +4,7 @@ use strict;
 
 use IO::Select;
 use Term::TermKey qw(
-   FLAG_UTF8 
-   KEYMOD_CTRL
-   RES_KEY RES_AGAIN RES_EOF 
-   FORMAT_VIM
+   FLAG_UTF8 KEYMOD_CTRL RES_KEY RES_AGAIN RES_EOF FORMAT_VIM
 );
 
 my $select = IO::Select->new();
@@ -15,12 +12,8 @@ my $select = IO::Select->new();
 my $tk = Term::TermKey->new(\*STDIN);
 $select->add(\*STDIN);
 
-# Other setup here
-
 # perl sucks and doesn't have a way to do this automatically
 binmode( STDOUT, ":utf8" ) if $tk->get_flags & FLAG_UTF8;
-
-my $again = 0;
 
 sub on_key
 {
@@ -28,10 +21,12 @@ sub on_key
 
    print "You pressed " . $tk->format_key( $key, FORMAT_VIM ) . "\n";
 
-   exit if $key->type_is_unicode
-           && $key->modifiers & KEYMOD_CTRL
-           && $key->utf8 eq "C";
+   exit if $key->type_is_unicode and
+           lc $key->utf8 eq "c" and
+           $key->modifiers & KEYMOD_CTRL;
 }
+
+my $again = 0;
 
 while(1) {
    my $timeout = $again ? $tk->get_waittime/1000 : undef;

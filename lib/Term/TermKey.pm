@@ -2,7 +2,7 @@ package Term::TermKey;
 
 use strict;
 
-our $VERSION = "0.02";
+our $VERSION = "0.03";
 
 use base qw( DynaLoader );
 use base qw( Exporter );
@@ -166,6 +166,16 @@ C<< Term::TermKey::Key->sym() >>.
 
 =cut
 
+=head2 $sym = $tk->keyname2sym( $keyname )
+
+Look up the sym for a named key. The result of this method call can be
+compared directly against the value returned by
+C<< Term::TermKey::Key->sym() >>. Because this method has to perform a linear
+search of key names, it is best called rarely, perhaps during program
+initialisation, and the result stored for easier comparisons during runtime.
+
+=cut
+
 =head2 $str = $tk->format_key( $key, $format )
 
 Return a string representation of the keypress event in C<$key>, following the
@@ -210,7 +220,8 @@ The function key number for C<TYPE_FUNCTION>, or 0 otherwise.
 =head2 $key->sym
 
 The key symbol number for C<TYPE_KEYSYM>, or 0 otherwise. This can be passed
-to C<< Term::TermKey->get_keyname() >>.
+to C<< Term::TermKey->get_keyname() >>, or compared to a result earlier
+obtained from C<< Term::TermKey->keyname2sym() >>.
 
 =head2 $key->modifiers
 
@@ -362,7 +373,7 @@ This program just prints every keypress until the user presses C<Ctrl-C>.
  
  my $tk = Term::TermKey->new(\*STDIN);
  
- # perl sucks and doesn't have a way to do this automatically
+ # ensure perl and libtermkey agree on Unicode handling
  binmode( STDOUT, ":utf8" ) if $tk->get_flags & FLAG_UTF8;
  
  while( ( my $ret = $tk->waitkey( my $key ) ) != RES_EOF ) {
@@ -385,7 +396,7 @@ many features in a true line editor like F<readline>.
  
  my $tk = Term::TermKey->new(\*STDIN);
  
- # perl sucks and doesn't have a way to do this automatically
+ # ensure perl and libtermkey agree on Unicode handling
  binmode( STDOUT, ":utf8" ) if $tk->get_flags & FLAG_UTF8;
 
  my $line = "";
@@ -442,7 +453,7 @@ the C<advisereadable()> method in an asynchronous program.
  my $tk = Term::TermKey->new(\*STDIN);
  $select->add(\*STDIN);
  
- # perl sucks and doesn't have a way to do this automatically
+ # ensure perl and libtermkey agree on Unicode handling
  binmode( STDOUT, ":utf8" ) if $tk->get_flags & FLAG_UTF8;
  
  sub on_key

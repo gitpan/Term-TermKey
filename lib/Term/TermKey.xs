@@ -258,6 +258,11 @@ termkey_get_keyname(self, sym)
   Term::TermKey self
   int sym
 
+int
+termkey_keyname2sym(self, keyname)
+  Term::TermKey self
+  const char *keyname
+
 SV *
 format_key(self, key, format)
   Term::TermKey self

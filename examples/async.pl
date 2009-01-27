@@ -12,7 +12,7 @@ my $select = IO::Select->new();
 my $tk = Term::TermKey->new(\*STDIN);
 $select->add(\*STDIN);
 
-# perl sucks and doesn't have a way to do this automatically
+# ensure perl and libtermkey agree on Unicode handling
 binmode( STDOUT, ":utf8" ) if $tk->get_flags & FLAG_UTF8;
 
 sub on_key

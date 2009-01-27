@@ -1,0 +1,16 @@
+Revision history for Term-TermKey
+
+0.03    CHANGES:
+         * Added wrapping of termkey_keyname2sym().
+
+0.02    CHANGES:
+         * Quote async example inline, rather than refering to filename.
+        
+        BUGFIXES:
+         * Detect Ctrl-C in either upper or lowercase, to account for
+           libtermkey version 0.2.
+         * eval{}-wrap the initial call to ExtUtils::PkgConfig in case of
+           failure.
+
+0.01    First version, released on an unsuspecting world.
+

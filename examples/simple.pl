@@ -6,7 +6,7 @@ use Term::TermKey qw( FLAG_UTF8 RES_EOF KEYMOD_CTRL FORMAT_VIM );
 
 my $tk = Term::TermKey->new(\*STDIN);
 
-# perl sucks and doesn't have a way to do this automatically
+# ensure perl and libtermkey agree on Unicode handling
 binmode( STDOUT, ":utf8" ) if $tk->get_flags & FLAG_UTF8;
 
 while( ( my $ret = $tk->waitkey( my $key ) ) != RES_EOF ) {

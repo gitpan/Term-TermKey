@@ -5,11 +5,11 @@
 #include <termkey.h>
 
 typedef struct key_extended {
-  termkey_key k;
-  int         flags;
+  TermKeyKey k;
+  int        flags;
 } *Term__TermKey__Key;
 
-typedef termkey_t *Term__TermKey;
+typedef TermKey *Term__TermKey;
 
 static void setup_constants(void)
 {
@@ -215,7 +215,7 @@ getkey(self, key)
   Term::TermKey self
   Term::TermKey::Key key = NO_INIT
   PREINIT:
-    termkey_result res;
+    TermKeyResult res;
   PPCODE:
     key = get_keystruct_or_new(ST(1), "Term::TermKey::getkey");
     res = termkey_getkey(self, &key->k);
@@ -228,7 +228,7 @@ getkey_force(self, key)
   Term::TermKey self
   Term::TermKey::Key key = NO_INIT
   PREINIT:
-    termkey_result res;
+    TermKeyResult res;
   PPCODE:
     key = get_keystruct_or_new(ST(1), "Termk::TermKey::getkey_force");
     res = termkey_getkey_force(self, &key->k);
@@ -241,7 +241,7 @@ waitkey(self, key)
   Term::TermKey self
   Term::TermKey::Key key = NO_INIT
   PREINIT:
-    termkey_result res;
+    TermKeyResult res;
   PPCODE:
     key = get_keystruct_or_new(ST(1), "Term::TermKey::waitkey");
     res = termkey_waitkey(self, &key->k);

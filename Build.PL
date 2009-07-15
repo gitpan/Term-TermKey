@@ -9,6 +9,9 @@ eval { require ExtUtils::PkgConfig; } or
 eval { ExtUtils::PkgConfig->find("termkey"); } or
    die "OS unsupported - pkg-config cannot find termkey\n";
 
+my $version = ExtUtils::PkgConfig->modversion("termkey");
+$version >= 0.3 or die "OS unsupported - termkey too old ($version)\n";
+
 my $cflags = ExtUtils::PkgConfig->cflags("termkey");
 my $libs   = ExtUtils::PkgConfig->libs("termkey");
 
@@ -31,6 +34,8 @@ my $build = Module::Build->new
                },
    license => 'perl',
    create_makefile_pl => 'small',
+   create_license => 1,
+   create_readme  => 1,
   );
 
 $build->create_build_script;

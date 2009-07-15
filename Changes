@@ -1,5 +1,11 @@
 Revision history for Term-TermKey
 
+0.04    CHANGES:
+         * Use binmode :encoding(UTF-8) rather than :utf8
+         * Updated for libtermkey 0.3
+         * Added 'use warnings'
+         * Various small updates to keep CPANTS happy
+
 0.03    CHANGES:
          * Added wrapping of termkey_keyname2sym().
 

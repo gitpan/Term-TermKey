@@ -1,8 +1,9 @@
 package Term::TermKey;
 
 use strict;
+use warnings;
 
-our $VERSION = "0.03";
+our $VERSION = '0.04';
 
 use base qw( DynaLoader );
 use base qw( Exporter );
@@ -374,7 +375,7 @@ This program just prints every keypress until the user presses C<Ctrl-C>.
  my $tk = Term::TermKey->new(\*STDIN);
  
  # ensure perl and libtermkey agree on Unicode handling
- binmode( STDOUT, ":utf8" ) if $tk->get_flags & FLAG_UTF8;
+ binmode( STDOUT, ":encoding(UTF-8)" ) if $tk->get_flags & FLAG_UTF8;
  
  while( ( my $ret = $tk->waitkey( my $key ) ) != RES_EOF ) {
     print "Got key: ".$tk->format_key( $key, FORMAT_VIM )."\n";
@@ -397,7 +398,7 @@ many features in a true line editor like F<readline>.
  my $tk = Term::TermKey->new(\*STDIN);
  
  # ensure perl and libtermkey agree on Unicode handling
- binmode( STDOUT, ":utf8" ) if $tk->get_flags & FLAG_UTF8;
+ binmode( STDOUT, ":encoding(UTF-8)" ) if $tk->get_flags & FLAG_UTF8;
 
  my $line = "";
 
@@ -454,7 +455,7 @@ the C<advisereadable()> method in an asynchronous program.
  $select->add(\*STDIN);
  
  # ensure perl and libtermkey agree on Unicode handling
- binmode( STDOUT, ":utf8" ) if $tk->get_flags & FLAG_UTF8;
+ binmode( STDOUT, ":encoding(UTF-8)" ) if $tk->get_flags & FLAG_UTF8;
  
  sub on_key
  {
@@ -525,5 +526,5 @@ L<http://www.leonerd.org.uk/code/libtermkey/> - libtermkey home page
 
 =head1 AUTHOR
 
-Paul Evans E<lt>leonerd@leonerd.org.ukE<gt>
+Paul Evans <leonerd@leonerd.org.uk>
 

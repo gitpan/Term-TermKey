@@ -3,7 +3,7 @@ package Term::TermKey;
 use strict;
 use warnings;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use base qw( DynaLoader );
 use base qw( Exporter );
@@ -177,6 +177,16 @@ initialisation, and the result stored for easier comparisons during runtime.
 
 =cut
 
+=head2 ( $ev, $button, $line, $col ) = $tk->interpret_mouse( $key )
+
+If C<$key> contains a mouse event then its details are returned in a list.
+C<$ev> will be one of the C<TERMKEY_MOUSE_*> constants, C<$button> will be the
+button number it relates to, and C<$line> and C<$col> will give the screen
+coordinates, numbered from 1. If C<$key> does not contain a mouse event then
+an empty list is returned.
+
+=cut
+
 =head2 $str = $tk->format_key( $key, $format )
 
 Return a string representation of the keypress event in C<$key>, following the
@@ -200,7 +210,8 @@ Construct a new blank key event structure.
 
 =head2 $key->type
 
-The type of event. One of C<TYPE_UNICODE>, C<TYPE_FUNCTION>, C<TYPE_KEYSYM>.
+The type of event. One of C<TYPE_UNICODE>, C<TYPE_FUNCTION>, C<TYPE_KEYSYM>,
+C<TYPE_MOUSE>.
 
 =head2 $key->type_is_unicode
 
@@ -208,7 +219,12 @@ The type of event. One of C<TYPE_UNICODE>, C<TYPE_FUNCTION>, C<TYPE_KEYSYM>.
 
 =head2 $key->type_is_keysym
 
+=head2 $key->type_is_mouse
+
 Shortcuts which return a boolean.
+
+In the case of a mouse event, you must use the C<interpret_mouse> method on
+the containing C<Term::TermKey> object to access the event details.
 
 =head2 $key->codepoint
 
@@ -257,6 +273,10 @@ a numbered function key
 
 a symbolic key
 
+=item C<TYPE_MOUSE>
+
+a mouse movement or button press or release
+
 =back
 
 These constants are result values from C<getkey()>, C<getkey_force()>,
@@ -296,6 +316,30 @@ These constants are key modifier masks for C<< $key->modifiers >>
 =item C<KEYMOD_CTRL>
 
 Should be obvious ;)
+
+=back
+
+These constants are types of mouse event which may be returned by
+C<interpret_mouse>:
+
+=over 4
+
+=item C<TERMKEY_MOUSE_UNKNOWN>
+
+The type of mouse event was not recognised
+
+=item C<TERMKEY_MOUSE_PRESS>
+
+The event reports a mouse button being pressed
+
+=item C<TERMKEY_MOUSE_DRAG>
+
+The event reports the mouse being moved while a button is held down
+
+=item C<TERMKEY_MOUSE_RELEASE>
+
+The event reports the mouse buttons being released, or the mouse moved without
+a button held.
 
 =back
 
@@ -349,6 +393,11 @@ Use the name C<Meta> or the letter C<M> instead of C<Alt> or C<A>.
 
 If the key event is a special key instead of unmodified Unicode, wrap it in
 C<< <brackets> >>.
+
+=item C<FORMAT_MOUSE_POS>
+
+If the event is a mouse event, also include the cursor position; rendered as
+C<@ ($col,$line)>
 
 =item C<FORMAT_VIM>
 

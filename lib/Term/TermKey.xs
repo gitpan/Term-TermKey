@@ -26,6 +26,7 @@ static void setup_constants(void)
   DO_CONSTANT(TERMKEY_TYPE_UNICODE)
   DO_CONSTANT(TERMKEY_TYPE_FUNCTION)
   DO_CONSTANT(TERMKEY_TYPE_KEYSYM)
+  DO_CONSTANT(TERMKEY_TYPE_MOUSE)
 
   DO_CONSTANT(TERMKEY_RES_NONE)
   DO_CONSTANT(TERMKEY_RES_KEY)
@@ -35,6 +36,11 @@ static void setup_constants(void)
   DO_CONSTANT(TERMKEY_KEYMOD_SHIFT)
   DO_CONSTANT(TERMKEY_KEYMOD_ALT)
   DO_CONSTANT(TERMKEY_KEYMOD_CTRL)
+
+  DO_CONSTANT(TERMKEY_MOUSE_UNKNOWN)
+  DO_CONSTANT(TERMKEY_MOUSE_PRESS)
+  DO_CONSTANT(TERMKEY_MOUSE_DRAG)
+  DO_CONSTANT(TERMKEY_MOUSE_RELEASE)
 
   DO_CONSTANT(TERMKEY_FLAG_NOINTERPRET)
   DO_CONSTANT(TERMKEY_FLAG_CONVERTKP)
@@ -46,6 +52,7 @@ static void setup_constants(void)
   DO_CONSTANT(TERMKEY_FORMAT_CARETCTRL)
   DO_CONSTANT(TERMKEY_FORMAT_ALTISMETA)
   DO_CONSTANT(TERMKEY_FORMAT_WRAPBRACKET)
+  DO_CONSTANT(TERMKEY_FORMAT_MOUSE_POS)
 
   DO_CONSTANT(TERMKEY_FORMAT_VIM)
 }
@@ -112,6 +119,14 @@ type_is_keysym(self)
   Term::TermKey::Key self
   CODE:
     RETVAL = self->k.type == TERMKEY_TYPE_KEYSYM;
+  OUTPUT:
+    RETVAL
+
+int
+type_is_mouse(self)
+  Term::TermKey::Key self
+  CODE:
+    RETVAL = self->k.type == TERMKEY_TYPE_MOUSE;
   OUTPUT:
     RETVAL
 
@@ -262,6 +277,23 @@ int
 termkey_keyname2sym(self, keyname)
   Term::TermKey self
   const char *keyname
+
+void
+interpret_mouse(self, key)
+  Term::TermKey self
+  Term::TermKey::Key key
+  PREINIT:
+    TermKeyMouseEvent ev;
+    int button;
+    int line, col;
+  PPCODE:
+    if(termkey_interpret_mouse(self, &key->k, &ev, &button, &line, &col) != TERMKEY_RES_KEY)
+      XSRETURN(0);
+    mPUSHi(ev);
+    mPUSHi(button);
+    mPUSHi(line);
+    mPUSHi(col);
+    XSRETURN(4);
 
 SV *
 format_key(self, key, format)

@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
+use warnings;
 
 use Term::TermKey qw( FLAG_UTF8 RES_EOF FORMAT_LONGMOD );
 

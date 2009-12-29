@@ -1,5 +1,10 @@
 Revision history for Term-TermKey
 
+0.06    CHANGES:
+         * Store underlying Term::TermKey object in Term::TermKey::Key event
+           objects; allows $key->format() shortcut
+         * More tests - test simple keypresses, use Test::Refcount
+
 0.05    CHANGES:
          * Updated for libtermkey 0.5; addsmouse support
          * Added 'use warnings' also to example scripts

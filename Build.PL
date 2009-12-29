@@ -21,17 +21,19 @@ my $build = Module::Build->new
    extra_compiler_flags => [ split( m/ /, $cflags ) ],
    extra_linker_flags   => [ split( m/ /, $libs ) ],
    configure_requires => {
-                  'ExtUtils::PkgConfig' => 0,
-               },
+      'ExtUtils::PkgConfig' => 0,
+   },
    requires => {
-               },
+   },
    recommends => {
-               },
+   },
    build_requires => {
-                 'ExtUtils::PkgConfig' => 0,
-                 'Module::Build' => 0,
-                 'Module::Build::Compat' => 0,
-               },
+      'ExtUtils::PkgConfig' => 0,
+      'Module::Build' => 0,
+      'Module::Build::Compat' => 0,
+      'Test::More' => 0,
+      'Test::Refcount' => 0,
+   },
    license => 'perl',
    create_makefile_pl => 'small',
    create_license => 1,

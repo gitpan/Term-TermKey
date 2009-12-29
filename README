@@ -178,6 +178,14 @@ KEY OBJECTS
     underlying "termkey" library is in UTF-8 mode then this will be a UTF-8
     string. If it is in raw mode, then this will be a single raw byte.
 
+  $key->termkey
+    Return the underlying "Term::TermKey" object this key was retrieved
+    from.
+
+  $str = $key->format( $format )
+    Returns a string representation of the keypress event, identically to
+    calling "format_key" on the underlying "Term::TermKey" object.
+
 EXPORTED CONSTANTS
     The following constant names are all derived from the underlying
     "libtermkey" library. For more detail see the documentation on the

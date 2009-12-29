@@ -3,7 +3,7 @@ package Term::TermKey;
 use strict;
 use warnings;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use base qw( DynaLoader );
 use base qw( Exporter );
@@ -250,7 +250,22 @@ A string representation of the given Unicode codepoint. If the underlying
 C<termkey> library is in UTF-8 mode then this will be a UTF-8 string. If it is
 in raw mode, then this will be a single raw byte.
 
+=head2 $key->termkey
+
+Return the underlying C<Term::TermKey> object this key was retrieved from.
+
+=head2 $str = $key->format( $format )
+
+Returns a string representation of the keypress event, identically to calling
+C<format_key> on the underlying C<Term::TermKey> object.
+
 =cut
+
+sub Term::TermKey::Key::format
+{
+   my $self = shift;
+   return $self->termkey->format_key( $self, @_ );
+}
 
 =head1 EXPORTED CONSTANTS
 

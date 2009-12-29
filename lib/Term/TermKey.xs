@@ -6,7 +6,7 @@
 
 typedef struct key_extended {
   TermKeyKey k;
-  int        flags;
+  SV        *termkey;
 } *Term__TermKey__Key;
 
 typedef TermKey *Term__TermKey;
@@ -57,20 +57,32 @@ static void setup_constants(void)
   DO_CONSTANT(TERMKEY_FORMAT_VIM)
 }
 
-static struct key_extended *get_keystruct_or_new(SV *sv, const char *funcname)
+static struct key_extended *get_keystruct_or_new(SV *sv, const char *funcname, SV *termkey)
 {
+  struct key_extended *key;
   if(sv && !SvOK(sv)) {
-    struct key_extended *key;
     Newx(key, 1, struct key_extended);
     sv_setref_pv(sv, "Term::TermKey::Key", (void*)key);
-    return key;
+    key->termkey = NULL;
   }
-  else if(sv_derived_from(sv, "Term::TermKey::Key"))
-    return (struct key_extended *)SvIV((SV*)SvRV(sv));
+  else if(sv_derived_from(sv, "Term::TermKey::Key")) {
+    IV tmp = SvIV((SV*)SvRV(sv));
+    key = INT2PTR(struct key_extended *, tmp);
+  }
   else
     Perl_croak(aTHX_ "%s: %s is not of type %s",
                 funcname,
                 "key", "Term::TermKey::Key");
+
+  if(!key->termkey ||
+     SvRV(key->termkey) != SvRV(termkey)) {
+    if(key->termkey)
+      SvREFCNT_dec(key->termkey);
+
+    key->termkey = newRV_inc(SvRV(termkey));
+  }
+
+  return key;
 }
 
 
@@ -88,6 +100,7 @@ void
 DESTROY(self)
   Term::TermKey::Key self
   CODE:
+    SvREFCNT_dec(self->termkey);
     Safefree(self);
 
 int
@@ -163,12 +176,27 @@ modifiers(self)
     RETVAL
 
 SV *
+termkey(self)
+  Term::TermKey::Key self
+  CODE:
+    RETVAL = newRV_inc(SvRV(self->termkey));
+  OUTPUT:
+    RETVAL
+
+SV *
 utf8(self)
   Term::TermKey::Key self
   CODE:
     if(self->k.type == TERMKEY_TYPE_UNICODE) {
+      IV tmp;
+      TermKey *termkey;
+
       RETVAL = newSVpv(self->k.utf8, 0);
-      if(self->flags & TERMKEY_FLAG_UTF8)
+
+      tmp = SvIV((SV*)SvRV(self->termkey));
+      termkey = INT2PTR(Term__TermKey, tmp);
+
+      if(termkey_get_flags(termkey) & TERMKEY_FLAG_UTF8)
         SvUTF8_on(RETVAL);
     }
     else
@@ -232,9 +260,8 @@ getkey(self, key)
   PREINIT:
     TermKeyResult res;
   PPCODE:
-    key = get_keystruct_or_new(ST(1), "Term::TermKey::getkey");
+    key = get_keystruct_or_new(ST(1), "Term::TermKey::getkey", ST(0));
     res = termkey_getkey(self, &key->k);
-    key->flags = termkey_get_flags(self);
     mPUSHi(res);
     XSRETURN(1);
 
@@ -245,9 +272,8 @@ getkey_force(self, key)
   PREINIT:
     TermKeyResult res;
   PPCODE:
-    key = get_keystruct_or_new(ST(1), "Termk::TermKey::getkey_force");
+    key = get_keystruct_or_new(ST(1), "Termk::TermKey::getkey_force", ST(0));
     res = termkey_getkey_force(self, &key->k);
-    key->flags = termkey_get_flags(self);
     mPUSHi(res);
     XSRETURN(1);
 
@@ -258,9 +284,8 @@ waitkey(self, key)
   PREINIT:
     TermKeyResult res;
   PPCODE:
-    key = get_keystruct_or_new(ST(1), "Term::TermKey::waitkey");
+    key = get_keystruct_or_new(ST(1), "Term::TermKey::waitkey", ST(0));
     res = termkey_waitkey(self, &key->k);
-    key->flags = termkey_get_flags(self);
     mPUSHi(res);
     XSRETURN(1);
 

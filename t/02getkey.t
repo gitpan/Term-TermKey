@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 27;
+use Test::More tests => 31;
 use Test::Refcount;
 
 use IO::Handle;
@@ -14,9 +14,12 @@ pipe( my ( $rd, $wr ) ) or die "Cannot pipe() - $!";
 # Sanitise this just in case
 $ENV{TERM} = "vt100";
 
+is_oneref( $rd, '$rd has refcount 1 initially' );
+
 my $tk = Term::TermKey->new( $rd, 0 );
 
 is_oneref( $tk, '$tk has refcount 1 initially' );
+is_refcount( $rd, 2, '$rd has refcount 2 after Term::TermKey->new' );
 
 my $key;
 
@@ -77,3 +80,9 @@ is_refcount( $tk, 2, '$tk has refcount 2 before dropping key' );
 undef $key;
 
 is_oneref( $tk, '$k has refcount 1 before EOF' );
+
+is_refcount( $rd, 2, '$rd has refcount 2 before dropping $tk' );
+
+undef $tk;
+
+is_oneref( $rd, '$rd has refcount 1 before EOF' );

@@ -1,14 +1,19 @@
+#  You may distribute under the terms of either the GNU General Public License
+#  or the Artistic License (the same terms as Perl itself)
+#
+#  (C) Paul Evans, 2009-2011 -- leonerd@leonerd.org.uk
+
 package Term::TermKey;
 
 use strict;
 use warnings;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
-use base qw( DynaLoader );
-use base qw( Exporter );
+use Exporter 'import';
 
-__PACKAGE__->DynaLoader::bootstrap( $VERSION );
+require XSLoader;
+XSLoader::load( __PACKAGE__, $VERSION );
 
 =head1 NAME
 
@@ -204,9 +209,9 @@ Objects in this class cannot be changed by perl code. C<getkey()>,
 C<getkey_force()> or C<waitkey()> will overwrite the contents of the structure
 with a new value.
 
-=head2 $key = Term::TermKey::Key->new
-
-Construct a new blank key event structure.
+Keys cannot be constructed, but C<getkey()>, C<getkey_force()> or C<waitkey()>
+will place a new key structure in the C<$key> variable if it is undefined when
+they are called.
 
 =head2 $key->type
 
@@ -386,6 +391,16 @@ Ignore locale settings; force UTF-8 recombining on.
 Even if the terminal file descriptor represents a TTY device, do not call the
 C<tcsetattr()> C<termios> function on it to set in canonical input mode.
 
+=item C<FLAG_SPACESYMBOL>
+
+Make the Space key appear as a named symbol. Without this flag, it appears as
+a normal Unicode character.
+
+=item C<FLAG_CTRLC>
+
+Disable the C<SIGINT> behaviour of the C<Ctrl-C> key, allowing it to be read
+as a modified Unicode keypress.
+
 =back
 
 These constants are flags to C<format_key>
@@ -422,11 +437,6 @@ close to the format the F<vim> editor uses.
 =back
 
 =cut
-
-# Keep perl happy; keep Britain tidy
-1;
-
-__END__
 
 =head1 EXAMPLES
 
@@ -592,3 +602,6 @@ L<http://www.leonerd.org.uk/code/libtermkey/> - libtermkey home page
 
 Paul Evans <leonerd@leonerd.org.uk>
 
+=cut
+
+0x55AA;

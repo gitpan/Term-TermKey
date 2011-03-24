@@ -9,7 +9,10 @@ typedef struct key_extended {
   SV        *termkey;
 } *Term__TermKey__Key;
 
-typedef TermKey *Term__TermKey;
+typedef struct termkey_with_fh {
+  TermKey *tk;
+  SV      *fh;
+} *Term__TermKey;
 
 static void setup_constants(void)
 {
@@ -47,6 +50,8 @@ static void setup_constants(void)
   DO_CONSTANT(TERMKEY_FLAG_RAW)
   DO_CONSTANT(TERMKEY_FLAG_UTF8)
   DO_CONSTANT(TERMKEY_FLAG_NOTERMIOS)
+  DO_CONSTANT(TERMKEY_FLAG_SPACESYMBOL)
+  DO_CONSTANT(TERMKEY_FLAG_CTRLC)
 
   DO_CONSTANT(TERMKEY_FORMAT_LONGMOD)
   DO_CONSTANT(TERMKEY_FORMAT_CARETCTRL)
@@ -87,14 +92,6 @@ static struct key_extended *get_keystruct_or_new(SV *sv, const char *funcname, S
 
 
 MODULE = Term::TermKey::Key  PACKAGE = Term::TermKey::Key    PREFIX = key_
-
-Term::TermKey::Key
-new(package)
-  char *package
-  CODE:
-    Newx(RETVAL, 1, struct key_extended);
-  OUTPUT:
-    RETVAL
 
 void
 DESTROY(self)
@@ -194,7 +191,7 @@ utf8(self)
       RETVAL = newSVpv(self->k.utf8, 0);
 
       tmp = SvIV((SV*)SvRV(self->termkey));
-      termkey = INT2PTR(Term__TermKey, tmp);
+      termkey = (INT2PTR(Term__TermKey, tmp))->tk;
 
       if(termkey_get_flags(termkey) & TERMKEY_FLAG_UTF8)
         SvUTF8_on(RETVAL);
@@ -218,13 +215,16 @@ new(package, term, flags=0)
   INIT:
     int fd;
   CODE:
+    Newx(RETVAL, 1, struct termkey_with_fh);
     if(SvROK(term)) {
       fd = PerlIO_fileno(IoIFP(sv_2io(term)));
+      RETVAL->fh = SvREFCNT_inc(SvRV(term));
     }
     else {
       fd = SvIV(term);
+      RETVAL->fh = NULL;
     }
-    RETVAL = termkey_new(fd, flags);
+    RETVAL->tk = termkey_new(fd, flags);
   OUTPUT:
     RETVAL
 
@@ -232,26 +232,43 @@ void
 DESTROY(self)
   Term::TermKey self
   CODE:
-    termkey_destroy(self);
+    termkey_destroy(self->tk);
+    if(self->fh)
+      SvREFCNT_dec(self->fh);
+    Safefree(self);
   OUTPUT:
 
 int
-termkey_get_flags(self)
+get_flags(self)
   Term::TermKey self
+  CODE:
+    RETVAL = termkey_get_flags(self->tk);
+  OUTPUT:
+    RETVAL
 
 void
-termkey_set_flags(self, newflags)
+set_flags(self, newflags)
   Term::TermKey self
   int newflags
+  CODE:
+    termkey_set_flags(self->tk, newflags);
+  OUTPUT:
 
 int
-termkey_get_waittime(self)
+get_waittime(self)
   Term::TermKey self
+  CODE:
+    RETVAL = termkey_get_waittime(self->tk);
+  OUTPUT:
+    RETVAL
 
 void
-termkey_set_waittime(self, msec)
+set_waittime(self, msec)
   Term::TermKey self
   int msec
+  CODE:
+    termkey_set_waittime(self->tk, msec);
+  OUTPUT:
 
 int
 getkey(self, key)
@@ -261,7 +278,7 @@ getkey(self, key)
     TermKeyResult res;
   PPCODE:
     key = get_keystruct_or_new(ST(1), "Term::TermKey::getkey", ST(0));
-    res = termkey_getkey(self, &key->k);
+    res = termkey_getkey(self->tk, &key->k);
     mPUSHi(res);
     XSRETURN(1);
 
@@ -273,7 +290,7 @@ getkey_force(self, key)
     TermKeyResult res;
   PPCODE:
     key = get_keystruct_or_new(ST(1), "Termk::TermKey::getkey_force", ST(0));
-    res = termkey_getkey_force(self, &key->k);
+    res = termkey_getkey_force(self->tk, &key->k);
     mPUSHi(res);
     XSRETURN(1);
 
@@ -285,23 +302,35 @@ waitkey(self, key)
     TermKeyResult res;
   PPCODE:
     key = get_keystruct_or_new(ST(1), "Term::TermKey::waitkey", ST(0));
-    res = termkey_waitkey(self, &key->k);
+    res = termkey_waitkey(self->tk, &key->k);
     mPUSHi(res);
     XSRETURN(1);
 
 int
-termkey_advisereadable(self)
+advisereadable(self)
   Term::TermKey self
+  CODE:
+    RETVAL = termkey_advisereadable(self->tk);
+  OUTPUT:
+    RETVAL
 
 const char *
-termkey_get_keyname(self, sym)
+get_keyname(self, sym)
   Term::TermKey self
   int sym
+  CODE:
+    RETVAL = termkey_get_keyname(self->tk, sym);
+  OUTPUT:
+    RETVAL
 
 int
-termkey_keyname2sym(self, keyname)
+keyname2sym(self, keyname)
   Term::TermKey self
   const char *keyname
+  CODE:
+    RETVAL = termkey_keyname2sym(self->tk, keyname);
+  OUTPUT:
+    RETVAL
 
 void
 interpret_mouse(self, key)
@@ -312,7 +341,7 @@ interpret_mouse(self, key)
     int button;
     int line, col;
   PPCODE:
-    if(termkey_interpret_mouse(self, &key->k, &ev, &button, &line, &col) != TERMKEY_RES_KEY)
+    if(termkey_interpret_mouse(self->tk, &key->k, &ev, &button, &line, &col) != TERMKEY_RES_KEY)
       XSRETURN(0);
     mPUSHi(ev);
     mPUSHi(button);
@@ -327,8 +356,8 @@ format_key(self, key, format)
   int format
   CODE:
     RETVAL = newSVpvn("", 50);
-    SvCUR_set(RETVAL, termkey_snprint_key(self, SvPV_nolen(RETVAL), SvLEN(RETVAL), &key->k, format));
-    if(termkey_get_flags(self) & TERMKEY_FLAG_UTF8)
+    SvCUR_set(RETVAL, termkey_snprint_key(self->tk, SvPV_nolen(RETVAL), SvLEN(RETVAL), &key->k, format));
+    if(termkey_get_flags(self->tk) & TERMKEY_FLAG_UTF8)
       SvUTF8_on(RETVAL);
   OUTPUT:
     RETVAL

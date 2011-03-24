@@ -143,8 +143,9 @@ KEY OBJECTS
     "getkey_force()" or "waitkey()" will overwrite the contents of the
     structure with a new value.
 
-  $key = Term::TermKey::Key->new
-    Construct a new blank key event structure.
+    Keys cannot be constructed, but "getkey()", "getkey_force()" or
+    "waitkey()" will place a new key structure in the $key variable if it is
+    undefined when they are called.
 
   $key->type
     The type of event. One of "TYPE_UNICODE", "TYPE_FUNCTION",
@@ -268,6 +269,14 @@ EXPORTED CONSTANTS
         Even if the terminal file descriptor represents a TTY device, do not
         call the "tcsetattr()" "termios" function on it to set in canonical
         input mode.
+
+    "FLAG_SPACESYMBOL"
+        Make the Space key appear as a named symbol. Without this flag, it
+        appears as a normal Unicode character.
+
+    "FLAG_CTRLC"
+        Disable the "SIGINT" behaviour of the "Ctrl-C" key, allowing it to
+        be read as a modified Unicode keypress.
 
     These constants are flags to "format_key"
 

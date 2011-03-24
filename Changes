@@ -1,5 +1,12 @@
 Revision history for Term-TermKey
 
+0.07    CHANGES:
+         * Updated for libtermkey 0.6 - two new flag constants
+
+        BUGFIXES:
+         * Keep a reference to the underlying terminal filehandle globref
+           to ensure it doesn't get destroyed too early
+
 0.06    CHANGES:
          * Store underlying Term::TermKey object in Term::TermKey::Key event
            objects; allows $key->format() shortcut

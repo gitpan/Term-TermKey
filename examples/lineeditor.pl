@@ -15,8 +15,6 @@ my $line = "";
 $| = 1;
 
 my %key_handlers = (
-   "Ctrl-c" => sub { exit 0 },
-
    "Enter"  => sub { 
      print "\nThe line is: $line\n";
      $line = "";
@@ -26,11 +24,6 @@ my %key_handlers = (
       return unless length $line;
       substr( $line, -1, 1 ) = "";
       print "\cH \cH"; # erase it
-   },
-
-   "Space" => sub {
-      $line .= " ";
-      print " ";
    },
 
    # other handlers ...

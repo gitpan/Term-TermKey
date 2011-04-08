@@ -108,7 +108,7 @@ type(self)
   OUTPUT:
     RETVAL
 
-int
+bool
 type_is_unicode(self)
   Term::TermKey::Key self
   CODE:
@@ -116,7 +116,7 @@ type_is_unicode(self)
   OUTPUT:
     RETVAL
 
-int
+bool
 type_is_function(self)
   Term::TermKey::Key self
   CODE:
@@ -124,7 +124,7 @@ type_is_function(self)
   OUTPUT:
     RETVAL
 
-int
+bool
 type_is_keysym(self)
   Term::TermKey::Key self
   CODE:
@@ -132,7 +132,7 @@ type_is_keysym(self)
   OUTPUT:
     RETVAL
 
-int
+bool
 type_is_mouse(self)
   Term::TermKey::Key self
   CODE:
@@ -169,6 +169,30 @@ modifiers(self)
   Term::TermKey::Key self
   CODE:
     RETVAL = self->k.modifiers;
+  OUTPUT:
+    RETVAL
+
+bool
+modifier_shift(self)
+  Term::TermKey::Key self
+  CODE:
+    RETVAL = self->k.modifiers & TERMKEY_KEYMOD_SHIFT;
+  OUTPUT:
+    RETVAL
+
+bool
+modifier_alt(self)
+  Term::TermKey::Key self
+  CODE:
+    RETVAL = self->k.modifiers & TERMKEY_KEYMOD_ALT;
+  OUTPUT:
+    RETVAL
+
+bool
+modifier_ctrl(self)
+  Term::TermKey::Key self
+  CODE:
+    RETVAL = self->k.modifiers & TERMKEY_KEYMOD_CTRL;
   OUTPUT:
     RETVAL
 
@@ -356,8 +380,77 @@ format_key(self, key, format)
   int format
   CODE:
     RETVAL = newSVpvn("", 50);
-    SvCUR_set(RETVAL, termkey_snprint_key(self->tk, SvPV_nolen(RETVAL), SvLEN(RETVAL), &key->k, format));
+    SvCUR_set(RETVAL, termkey_strfkey(self->tk, SvPV_nolen(RETVAL), SvLEN(RETVAL), &key->k, format));
     if(termkey_get_flags(self->tk) & TERMKEY_FLAG_UTF8)
       SvUTF8_on(RETVAL);
+  OUTPUT:
+    RETVAL
+
+SV *
+parse_key(self, str, format)
+  Term::TermKey self
+  char *str
+  int format
+  PREINIT:
+    char *ret;
+    Term__TermKey__Key key;
+  CODE:
+    RETVAL = newSV(0);
+    key = get_keystruct_or_new(RETVAL, "Term::TermKey::parse_key", ST(0));
+
+    ret = termkey_strpkey(self->tk, str, &key->k, format);
+
+    if(!ret || ret[0]) {
+      SvREFCNT_dec(RETVAL);
+      XSRETURN_UNDEF;
+    }
+  OUTPUT:
+    RETVAL
+
+SV *
+parse_key_at_pos(self, str, format)
+  Term::TermKey self
+  SV *str
+  int format
+  PREINIT:
+    char *str_base, *str_start, *str_end;
+    MAGIC *posmg = NULL;
+    Term__TermKey__Key key;
+  CODE:
+    if(SvREADONLY(str))
+      croak("str must not be a string literal");
+
+    str_start = str_base = SvPV_nolen(str);
+
+    if(SvTYPE(str) >= SVt_PVMG && SvMAGIC(str))
+      posmg = mg_find(str, PERL_MAGIC_regex_global);
+    if(posmg)
+      str_start += posmg->mg_len; /* already in bytes */
+
+    RETVAL = newSV(0);
+    key = get_keystruct_or_new(RETVAL, "Term::TermKey::parse_key_at_pos", ST(0));
+
+    str_end = termkey_strpkey(self->tk, str_start, &key->k, format);
+
+    if(!str_end) {
+      SvREFCNT_dec(RETVAL);
+      XSRETURN_UNDEF;
+    }
+
+    if(!posmg)
+      posmg = sv_magicext(str, NULL, PERL_MAGIC_regex_global, &PL_vtbl_mglob,
+                          NULL, 0);
+
+    posmg->mg_len = str_end - str_base; /* already in bytes */
+  OUTPUT:
+    RETVAL
+
+int
+keycmp(self, key1, key2)
+  Term::TermKey self
+  Term::TermKey::Key key1
+  Term::TermKey::Key key2
+  CODE:
+    RETVAL = termkey_keycmp(self->tk, &key1->k, &key2->k);
   OUTPUT:
     RETVAL

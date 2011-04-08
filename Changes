@@ -1,5 +1,10 @@
 Revision history for Term-TermKey
 
+0.08    CHANGES:
+         * Updated for libtermkey 0.7:
+           + Added ->parse_key, ->parse_key_at_pos, ->keycmp
+         * Added $key->modifier_shift, modifier_alt, modifier_ctrl
+
 0.07    CHANGES:
          * Updated for libtermkey 0.6 - two new flag constants
 

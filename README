@@ -45,24 +45,17 @@ CONSTRUCTOR
 
 METHODS
   $flags = $tk->get_flags
-    Return the current flags in operation, as specified in the constructor
-    or the last call to "set_flags()". One of the "FLAG_UTF8" or "FLAG_RAW"
+  $tk->set_flags( $newflags )
+    Accessor and mutator for the flags. One of the "FLAG_UTF8" or "FLAG_RAW"
     flags will be set, even if neither was present in the constructor, as in
     this case the library will attempt to detect if the current locale is
     UTF-8 aware or not.
 
-  $tk->set_flags( $newflags )
-    Set the flags. This is a bitmask the same as the value passed to the
-    constructor.
-
   $msec = $tk->get_waittime
-    Return the current maximum wait time in miliseconds as set by the
-    "set_waittime()" method. The underlying "libtermkey" library will have
-    specified a default value when it started.
-
   $tk->set_waittime( $msec )
-    Set the maximum wait time in miliseconds to await more of a partially
-    complete key sequence.
+    Accessor and mutator for the maximum wait time in miliseconds. The
+    underlying "libtermkey" library will have specified a default value when
+    the object was constructed.
 
   $res = $tk->getkey( $key )
     Attempt to retrieve a single keypress event from the buffer, and put it
@@ -137,6 +130,38 @@ METHODS
     This may be useful for matching keypress events against keybindings
     stored in a hash. See EXAMPLES section for more detail.
 
+  $key = $tk->parse_key( $str, $format )
+    Return a keypress event by parsing the string representation in $str,
+    following the flags given. This method is an inverse of "format_key".
+
+    This may be useful for parsing entries from a configuration file or
+    similar.
+
+  $key = $tk->parse_key_at_pos( $str, $format )
+    Return a keypress event by parsing the string representation in a region
+    of $str, following the flags given.
+
+    Where "parse_key" will start at the beginning of the string and requires
+    the entire input to be consumed, this method will start at the current
+    "pos()" position in $str (or at the beginning of the string if none is
+    yet set), and after a successful parse, will update it to the end of the
+    matched section. This position does not have to be at the end of the
+    string. $str must therefore be a real scalar variable, and not a string
+    literal.
+
+    This may be useful for incremental parsing of configuration or other
+    data, out of a larger string.
+
+  $cmp = $tk->keycmp( $key1, $key2 )
+    Compares the two given keypress events, returning a number less than,
+    equal to, or greater than zero, depending on the ordering. Keys are
+    ordered first by type (unicode, keysym, function, mouse), then by value
+    within that type, then finally by modifier bits.
+
+    This may be useful in "sort" expressions:
+
+     my @sorted_keys = sort { $tk->keycmp( $a, $b ) } @keys;
+
 KEY OBJECTS
     The "Term::TermKey::Key" subclass is used to store a single keypress
     event. Objects in this class cannot be changed by perl code. "getkey()",
@@ -145,7 +170,8 @@ KEY OBJECTS
 
     Keys cannot be constructed, but "getkey()", "getkey_force()" or
     "waitkey()" will place a new key structure in the $key variable if it is
-    undefined when they are called.
+    undefined when they are called. "parse_key()" and "parse_key_at_pos()"
+    will return new keys.
 
   $key->type
     The type of event. One of "TYPE_UNICODE", "TYPE_FUNCTION",
@@ -173,6 +199,11 @@ KEY OBJECTS
 
   $key->modifiers
     The modifier bitmask. Can be compared against the "KEYMOD_*" constants.
+
+  $key->modifier_shift
+  $key->modifier_alt
+  $key->modifier_ctrl
+    Shortcuts which return a boolean if the appropriate modifier is present.
 
   $key->utf8
     A string representation of the given Unicode codepoint. If the
@@ -307,7 +338,7 @@ EXAMPLES
   A simple print-until-"Ctrl-C" loop
     This program just prints every keypress until the user presses "Ctrl-C".
 
-     use Term::TermKey qw( FLAG_UTF8 RES_EOF KEYMOD_CTRL FORMAT_VIM );
+     use Term::TermKey qw( FLAG_UTF8 RES_EOF FORMAT_VIM );
  
      my $tk = Term::TermKey->new(\*STDIN);
  
@@ -316,10 +347,6 @@ EXAMPLES
  
      while( ( my $ret = $tk->waitkey( my $key ) ) != RES_EOF ) {
         print "Got key: ".$tk->format_key( $key, FORMAT_VIM )."\n";
-
-        last if $key->type_is_unicode and 
-                lc $key->utf8 eq "c" and
-                $key->modifiers & KEYMOD_CTRL;
      }
 
   Configuration of custom keypresses
@@ -342,8 +369,6 @@ EXAMPLES
      $| = 1;
 
      my %key_handlers = (
-        "Ctrl-c" => sub { exit 0 },
-
         "Enter"  => sub { 
            print "\nThe line is: $line\n";
            $line = "";
@@ -353,11 +378,6 @@ EXAMPLES
            return unless length $line;
            substr( $line, -1, 1 ) = "";
            print "\cH \cH"; # erase it
-        },
-
-        "Space" => sub {
-           $line .= " ";
-           print " ";
         },
 
         # other handlers ...
@@ -382,7 +402,7 @@ EXAMPLES
 
      use IO::Select;
      use Term::TermKey qw(
-        FLAG_UTF8 KEYMOD_CTRL RES_KEY RES_AGAIN RES_EOF FORMAT_VIM
+        FLAG_UTF8 RES_KEY RES_AGAIN RES_EOF FORMAT_VIM
      );
  
      my $select = IO::Select->new();
@@ -398,10 +418,6 @@ EXAMPLES
         my ( $tk, $key ) = @_;
  
         print "You pressed " . $tk->format_key( $key, FORMAT_VIM ) . "\n";
- 
-        exit if $key->type_is_unicode and
-                lc $key->utf8 eq "c" and
-                $key->modifiers & KEYMOD_CTRL;
      }
  
      my $again = 0;

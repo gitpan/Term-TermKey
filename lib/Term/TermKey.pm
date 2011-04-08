@@ -8,7 +8,7 @@ package Term::TermKey;
 use strict;
 use warnings;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use Exporter 'import';
 
@@ -80,32 +80,22 @@ of 0 if not supplied. See the C<FLAG_*> constants.
 
 =head2 $flags = $tk->get_flags
 
-Return the current flags in operation, as specified in the constructor or the
-last call to C<set_flags()>. One of the C<FLAG_UTF8> or C<FLAG_RAW> flags will
-be set, even if neither was present in the constructor, as in this case the
-library will attempt to detect if the current locale is UTF-8 aware or not.
-
-=cut
-
 =head2 $tk->set_flags( $newflags )
 
-Set the flags. This is a bitmask the same as the value passed to the
-constructor.
+Accessor and mutator for the flags. One of the C<FLAG_UTF8> or C<FLAG_RAW>
+flags will be set, even if neither was present in the constructor, as in this
+case the library will attempt to detect if the current locale is UTF-8 aware
+or not.
 
 =cut
 
 =head2 $msec = $tk->get_waittime
 
-Return the current maximum wait time in miliseconds as set by the
-C<set_waittime()> method. The underlying C<libtermkey> library will have
-specified a default value when it started.
-
-=cut
-
 =head2 $tk->set_waittime( $msec )
 
-Set the maximum wait time in miliseconds to await more of a partially complete
-key sequence.
+Accessor and mutator for the maximum wait time in miliseconds. The underlying
+C<libtermkey> library will have specified a default value when the object was
+constructed.
 
 =cut
 
@@ -202,6 +192,45 @@ a hash. See EXAMPLES section for more detail.
 
 =cut
 
+=head2 $key = $tk->parse_key( $str, $format )
+
+Return a keypress event by parsing the string representation in C<$str>,
+following the flags given. This method is an inverse of C<format_key>.
+
+This may be useful for parsing entries from a configuration file or similar.
+
+=cut
+
+=head2 $key = $tk->parse_key_at_pos( $str, $format )
+
+Return a keypress event by parsing the string representation in a region of
+C<$str>, following the flags given.
+
+Where C<parse_key> will start at the beginning of the string and requires the
+entire input to be consumed, this method will start at the current C<pos()>
+position in C<$str> (or at the beginning of the string if none is yet set),
+and after a successful parse, will update it to the end of the matched
+section. This position does not have to be at the end of the string. C<$str>
+must therefore be a real scalar variable, and not a string literal.
+
+This may be useful for incremental parsing of configuration or other data, out
+of a larger string.
+
+=cut
+
+=head2 $cmp = $tk->keycmp( $key1, $key2 )
+
+Compares the two given keypress events, returning a number less than, equal
+to, or greater than zero, depending on the ordering. Keys are ordered first by
+type (unicode, keysym, function, mouse), then by value within that type, then
+finally by modifier bits.
+
+This may be useful in C<sort> expressions:
+
+ my @sorted_keys = sort { $tk->keycmp( $a, $b ) } @keys;
+
+=cut
+
 =head1 KEY OBJECTS
 
 The C<Term::TermKey::Key> subclass is used to store a single keypress event.
@@ -211,7 +240,8 @@ with a new value.
 
 Keys cannot be constructed, but C<getkey()>, C<getkey_force()> or C<waitkey()>
 will place a new key structure in the C<$key> variable if it is undefined when
-they are called.
+they are called. C<parse_key()> and C<parse_key_at_pos()> will return new
+keys.
 
 =head2 $key->type
 
@@ -248,6 +278,14 @@ obtained from C<< Term::TermKey->keyname2sym() >>.
 =head2 $key->modifiers
 
 The modifier bitmask. Can be compared against the C<KEYMOD_*> constants.
+
+=head2 $key->modifier_shift
+
+=head2 $key->modifier_alt
+
+=head2 $key->modifier_ctrl
+
+Shortcuts which return a boolean if the appropriate modifier is present.
 
 =head2 $key->utf8
 
@@ -444,7 +482,7 @@ close to the format the F<vim> editor uses.
 
 This program just prints every keypress until the user presses C<Ctrl-C>.
 
- use Term::TermKey qw( FLAG_UTF8 RES_EOF KEYMOD_CTRL FORMAT_VIM );
+ use Term::TermKey qw( FLAG_UTF8 RES_EOF FORMAT_VIM );
  
  my $tk = Term::TermKey->new(\*STDIN);
  
@@ -453,10 +491,6 @@ This program just prints every keypress until the user presses C<Ctrl-C>.
  
  while( ( my $ret = $tk->waitkey( my $key ) ) != RES_EOF ) {
     print "Got key: ".$tk->format_key( $key, FORMAT_VIM )."\n";
-
-    last if $key->type_is_unicode and 
-            lc $key->utf8 eq "c" and
-            $key->modifiers & KEYMOD_CTRL;
  }
 
 =head2 Configuration of custom keypresses
@@ -479,8 +513,6 @@ many features in a true line editor like F<readline>.
  $| = 1;
 
  my %key_handlers = (
-    "Ctrl-c" => sub { exit 0 },
-
     "Enter"  => sub { 
        print "\nThe line is: $line\n";
        $line = "";
@@ -490,11 +522,6 @@ many features in a true line editor like F<readline>.
        return unless length $line;
        substr( $line, -1, 1 ) = "";
        print "\cH \cH"; # erase it
-    },
-
-    "Space" => sub {
-       $line .= " ";
-       print " ";
     },
 
     # other handlers ...
@@ -520,7 +547,7 @@ the C<advisereadable()> method in an asynchronous program.
 
  use IO::Select;
  use Term::TermKey qw(
-    FLAG_UTF8 KEYMOD_CTRL RES_KEY RES_AGAIN RES_EOF FORMAT_VIM
+    FLAG_UTF8 RES_KEY RES_AGAIN RES_EOF FORMAT_VIM
  );
  
  my $select = IO::Select->new();
@@ -536,10 +563,6 @@ the C<advisereadable()> method in an asynchronous program.
     my ( $tk, $key ) = @_;
  
     print "You pressed " . $tk->format_key( $key, FORMAT_VIM ) . "\n";
- 
-    exit if $key->type_is_unicode and
-            lc $key->utf8 eq "c" and
-            $key->modifiers & KEYMOD_CTRL;
  }
  
  my $again = 0;

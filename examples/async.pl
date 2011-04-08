@@ -5,7 +5,7 @@ use warnings;
 
 use IO::Select;
 use Term::TermKey qw(
-   FLAG_UTF8 KEYMOD_CTRL RES_KEY RES_AGAIN RES_EOF FORMAT_VIM
+   FLAG_UTF8 RES_KEY RES_AGAIN RES_EOF FORMAT_VIM
 );
 
 my $select = IO::Select->new();
@@ -21,10 +21,6 @@ sub on_key
    my ( $tk, $key ) = @_;
 
    print "You pressed " . $tk->format_key( $key, FORMAT_VIM ) . "\n";
-
-   exit if $key->type_is_unicode and
-           lc $key->utf8 eq "c" and
-           $key->modifiers & KEYMOD_CTRL;
 }
 
 my $again = 0;

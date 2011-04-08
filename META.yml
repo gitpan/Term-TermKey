@@ -21,7 +21,7 @@ name: Term-TermKey
 provides:
   Term::TermKey:
     file: lib/Term/TermKey.pm
-    version: 0.07
+    version: 0.08
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.07
+version: 0.08

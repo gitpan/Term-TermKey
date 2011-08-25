@@ -1,5 +1,11 @@
 Revision history for Term-TermKey
 
+0.09    CHANGES:
+         * Updated for libtermkey 0.9:
+           + Wrap TERMKEY_RES_ERROR, TERMKEY_FLAG_EINTR
+         * Implement EINTR retry logic in XS wrappings so that 
+           PERL_ASYNC_CHECK() can dispatch safe signal handlers
+
 0.08    CHANGES:
          * Updated for libtermkey 0.7:
            + Added ->parse_key, ->parse_key_at_pos, ->keycmp

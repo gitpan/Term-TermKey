@@ -87,16 +87,18 @@ METHODS
   $res = $tk->waitkey( $key )
     Attempt to retrieve a single keypress event from the buffer, or block
     until one is available. If successful, will return "RES_KEY" to indicate
-    that the $key structure now contains a new keypress event. The only
-    other result it can return is "RES_EOF", to indicate that the input
-    stream is now closed. If $key is an undefined lvalue (such as a new
-    scalar variable) it will be initialised to contain a new key structure.
+    that the $key structure now contains a new keypress event. If an IO
+    error occurs it will return "RES_ERROR", and if the input stream is now
+    closed it will return "RES_EOF".
+
+    If $key is an undefined lvalue (such as a new scalar variable) it will
+    be initialised to contain a new key structure.
 
   $res = $tk->advisereadable
     Inform the underlying library that new input may be available on the
     underlying file descriptor and so it should call "read()" to obtain it.
-    Will return "RES_AGAIN" if it read at least one more byte, or "RES_NONE"
-    if no more input was found.
+    Will return "RES_AGAIN" if it read at least one more byte, "RES_NONE" if
+    no more input was found, or "RES_ERROR" if an IO error occurs.
 
     Normally this method would only be used in programs that want to use
     "Term::TermKey" asynchronously; see the EXAMPLES section. This method
@@ -255,6 +257,10 @@ EXPORTED CONSTANTS
         only returned by "getkey()". To obtain the partial result even if it
         never completes, call "getkey_force()".
 
+    "RES_ERROR"
+        Returned by "waitkey" or "advisereadable" if an IO error occurs
+        while trying to read another key event.
+
     These constants are key modifier masks for "$key->modifiers"
 
     "KEYMOD_SHIFT"
@@ -308,6 +314,11 @@ EXPORTED CONSTANTS
     "FLAG_CTRLC"
         Disable the "SIGINT" behaviour of the "Ctrl-C" key, allowing it to
         be read as a modified Unicode keypress.
+
+    "FLAG_EINTR"
+        Disable retry on signal interrupt; instead report it as an error
+        with "RES_ERROR" and $! set to "EINTR". Without this flag, IO
+        operations will be retried if interrupted.
 
     These constants are flags to "format_key"
 

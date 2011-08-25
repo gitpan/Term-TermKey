@@ -4,6 +4,11 @@
 
 #include <termkey.h>
 
+/* Because of Perl's safe signal handling, we have to always enable the
+ * TERMKEY_FLAG_EINTR flag, and implement retry logic ourselves in the
+ * wrappings of termkey_waitkey and termkey_advisereadable
+ */
+
 typedef struct key_extended {
   TermKeyKey k;
   SV        *termkey;
@@ -12,6 +17,7 @@ typedef struct key_extended {
 typedef struct termkey_with_fh {
   TermKey *tk;
   SV      *fh;
+  int      flags;
 } *Term__TermKey;
 
 static void setup_constants(void)
@@ -35,6 +41,7 @@ static void setup_constants(void)
   DO_CONSTANT(TERMKEY_RES_KEY)
   DO_CONSTANT(TERMKEY_RES_EOF)
   DO_CONSTANT(TERMKEY_RES_AGAIN)
+  DO_CONSTANT(TERMKEY_RES_ERROR)
 
   DO_CONSTANT(TERMKEY_KEYMOD_SHIFT)
   DO_CONSTANT(TERMKEY_KEYMOD_ALT)
@@ -52,6 +59,7 @@ static void setup_constants(void)
   DO_CONSTANT(TERMKEY_FLAG_NOTERMIOS)
   DO_CONSTANT(TERMKEY_FLAG_SPACESYMBOL)
   DO_CONSTANT(TERMKEY_FLAG_CTRLC)
+  DO_CONSTANT(TERMKEY_FLAG_EINTR)
 
   DO_CONSTANT(TERMKEY_FORMAT_LONGMOD)
   DO_CONSTANT(TERMKEY_FORMAT_CARETCTRL)
@@ -221,7 +229,7 @@ utf8(self)
         SvUTF8_on(RETVAL);
     }
     else
-      RETVAL = NULL;
+      RETVAL = &PL_sv_undef;
   OUTPUT:
     RETVAL
 
@@ -248,7 +256,8 @@ new(package, term, flags=0)
       fd = SvIV(term);
       RETVAL->fh = NULL;
     }
-    RETVAL->tk = termkey_new(fd, flags);
+    RETVAL->tk = termkey_new(fd, flags | TERMKEY_FLAG_EINTR);
+    RETVAL->flags = flags;
   OUTPUT:
     RETVAL
 
@@ -266,7 +275,7 @@ int
 get_flags(self)
   Term::TermKey self
   CODE:
-    RETVAL = termkey_get_flags(self->tk);
+    RETVAL = self->flags;
   OUTPUT:
     RETVAL
 
@@ -275,7 +284,8 @@ set_flags(self, newflags)
   Term::TermKey self
   int newflags
   CODE:
-    termkey_set_flags(self->tk, newflags);
+    self->flags = newflags;
+    termkey_set_flags(self->tk, newflags | TERMKEY_FLAG_EINTR);
   OUTPUT:
 
 int
@@ -326,7 +336,18 @@ waitkey(self, key)
     TermKeyResult res;
   PPCODE:
     key = get_keystruct_or_new(ST(1), "Term::TermKey::waitkey", ST(0));
-    res = termkey_waitkey(self->tk, &key->k);
+
+    while(1) {
+      res = termkey_waitkey(self->tk, &key->k);
+
+      if(res != TERMKEY_RES_ERROR)
+        break;
+      if(errno != EINTR || self->flags & TERMKEY_FLAG_EINTR)
+        break;
+
+      PERL_ASYNC_CHECK();
+    }
+
     mPUSHi(res);
     XSRETURN(1);
 
@@ -334,7 +355,16 @@ int
 advisereadable(self)
   Term::TermKey self
   CODE:
-    RETVAL = termkey_advisereadable(self->tk);
+    while(1) {
+      RETVAL = termkey_advisereadable(self->tk);
+
+      if(RETVAL != TERMKEY_RES_ERROR)
+        break;
+      if(errno != EINTR || self->flags & TERMKEY_FLAG_EINTR)
+        break;
+
+      PERL_ASYNC_CHECK();
+    }
   OUTPUT:
     RETVAL
 

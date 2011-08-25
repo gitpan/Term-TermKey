@@ -8,7 +8,7 @@ package Term::TermKey;
 use strict;
 use warnings;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 use Exporter 'import';
 
@@ -135,9 +135,11 @@ descriptor. For a normal blocking read, see C<waitkey()>.
 
 Attempt to retrieve a single keypress event from the buffer, or block until
 one is available. If successful, will return C<RES_KEY> to indicate that the
-C<$key> structure now contains a new keypress event. The only other result it
-can return is C<RES_EOF>, to indicate that the input stream is now closed. If
-C<$key> is an undefined lvalue (such as a new scalar variable) it will be
+C<$key> structure now contains a new keypress event. If an IO error occurs it
+will return C<RES_ERROR>, and if the input stream is now closed it will return
+C<RES_EOF>.
+
+If C<$key> is an undefined lvalue (such as a new scalar variable) it will be
 initialised to contain a new key structure.
 
 =cut
@@ -146,8 +148,8 @@ initialised to contain a new key structure.
 
 Inform the underlying library that new input may be available on the
 underlying file descriptor and so it should call C<read()> to obtain it.
-Will return C<RES_AGAIN> if it read at least one more byte, or C<RES_NONE> if
-no more input was found.
+Will return C<RES_AGAIN> if it read at least one more byte, C<RES_NONE> if no
+more input was found, or C<RES_ERROR> if an IO error occurs.
 
 Normally this method would only be used in programs that want to use
 C<Term::TermKey> asynchronously; see the EXAMPLES section. This method
@@ -361,6 +363,11 @@ No key event is ready yet, but a partial one has been found. This is only
 returned by C<getkey()>. To obtain the partial result even if it never
 completes, call C<getkey_force()>.
 
+=item C<RES_ERROR>
+
+Returned by C<waitkey> or C<advisereadable> if an IO error occurs while trying
+to read another key event.
+
 =back
 
 These constants are key modifier masks for C<< $key->modifiers >>
@@ -438,6 +445,12 @@ a normal Unicode character.
 
 Disable the C<SIGINT> behaviour of the C<Ctrl-C> key, allowing it to be read
 as a modified Unicode keypress.
+
+=item C<FLAG_EINTR>
+
+Disable retry on signal interrupt; instead report it as an error with
+C<RES_ERROR> and C<$!> set to C<EINTR>. Without this flag, IO operations will
+be retried if interrupted.
 
 =back
 

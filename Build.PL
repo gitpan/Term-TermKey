@@ -18,7 +18,7 @@ eval { ExtUtils::PkgConfig->find("termkey"); } or
    die "OS unsupported - pkg-config cannot find termkey\n$LIBTERMKEY_MESSAGE";
 
 my $version = ExtUtils::PkgConfig->modversion("termkey");
-$version >= 0.7 or die "OS unsupported - termkey too old ($version)\n$LIBTERMKEY_MESSAGE";
+$version >= 0.9 or die "OS unsupported - termkey too old ($version)\n$LIBTERMKEY_MESSAGE";
 
 my $cflags = ExtUtils::PkgConfig->cflags("termkey");
 my $libs   = ExtUtils::PkgConfig->libs("termkey");
@@ -28,7 +28,9 @@ my $build = Module::Build->new(
    extra_compiler_flags => [ split( m/ /, $cflags ) ],
    extra_linker_flags   => [ split( m/ /, $libs ) ],
    configure_requires => {
+      'Exporter' => '5.57',
       'ExtUtils::PkgConfig' => 0,
+      'Module::Build' => 0,
    },
    build_requires => {
       'ExtUtils::PkgConfig' => 0,

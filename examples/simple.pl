@@ -17,6 +17,8 @@ if( $mouse ) {
    print "\e[?${mouse}h";
 }
 
+$SIG{WINCH} = sub { print "Window resize\n" };
+
 my $tk = Term::TermKey->new(\*STDIN);
 
 # ensure perl and libtermkey agree on Unicode handling

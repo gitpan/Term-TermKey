@@ -16,3 +16,4 @@ t/02getkey.t
 t/03parse_format.t
 t/99pod.t
 typemap
+META.json

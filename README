@@ -51,6 +51,10 @@ METHODS
     this case the library will attempt to detect if the current locale is
     UTF-8 aware or not.
 
+  $canonflags = $tk->get_canonflags
+  $tk->set_canonflags( $newcanonflags )
+    Accessor and mutator for the canonicalisation flags.
+
   $msec = $tk->get_waittime
   $tk->set_waittime( $msec )
     Accessor and mutator for the maximum wait time in miliseconds. The
@@ -308,8 +312,7 @@ EXPORTED CONSTANTS
         input mode.
 
     "FLAG_SPACESYMBOL"
-        Make the Space key appear as a named symbol. Without this flag, it
-        appears as a normal Unicode character.
+        Sets the "CANON_SPACESYMBOL" canonicalisation flag. See below.
 
     "FLAG_CTRLC"
         Disable the "SIGINT" behaviour of the "Ctrl-C" key, allowing it to
@@ -319,6 +322,20 @@ EXPORTED CONSTANTS
         Disable retry on signal interrupt; instead report it as an error
         with "RES_ERROR" and $! set to "EINTR". Without this flag, IO
         operations will be retried if interrupted.
+
+    These constants are canonicalisation flags for "set_canonflags" and
+    "get_canonflags"
+
+    "CANON_SPACESYMBOL"
+        With this flag set, the Space key will appear as a "TYPE_KEYSYM" key
+        event whose symname is "Space". Without this flag, it appears as a
+        normal "TYPE_UNICODE" character.
+
+    "CANON_DELBS"
+        With this flag set, the ASCII "DEL" byte is interpreted as the
+        "Backspace" keysym, rather than "DEL". This flag does not affect the
+        interpretation of ASCII "BS", which is always represented as
+        "Backspace".
 
     These constants are flags to "format_key"
 
@@ -459,17 +476,20 @@ EXAMPLES
         }
      }
 
-    See also the Term::TermKey::Async module which provides a convenient
-    wrapping of "Term::TermKey" for an IO::Async-based program.
-
-TODO
-    *   Consider if "$key = $tk->waitkey" is a better API. While underlying
-        library only returns "RES_KEY" or "RES_NONE" that works but if it
-        ever gains another value, all bets are off. Return undef and have a
-        "->err" method? Going into messyland...
+    There may also be more appropriate modules on CPAN for particular event
+    frameworks; see the "SEE ALSO" section below.
 
 SEE ALSO
-    *   <http://www.leonerd.org.uk/code/libtermkey/> - libtermkey home page
+    *   <http://www.leonerd.org.uk/code/libtermkey/> - "libtermkey" home
+        page
+
+    *   Term::TermKey::Async - terminal key input using "libtermkey" with
+        IO::Async
+
+    *   POE::Wheel::TermKey - terminal key input using "libtermkey" with POE
+
+    *   AnyEvent::TermKey - terminal key input using "libtermkey" with
+        AnyEvent
 
 AUTHOR
     Paul Evans <leonerd@leonerd.org.uk>

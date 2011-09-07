@@ -3,12 +3,14 @@ use warnings;
 
 use Module::Build;
 
+my $NEED_TERMKEY_VERSION = "0.10";
 my $URL = "http://www.leonerd.org.uk/code/libtermkey/";
 my $LIBTERMKEY_MESSAGE = <<"EOF";
 
 Please download and install an up-to-date version of libtermkey from
 
   $URL
+
 EOF
 
 eval { require ExtUtils::PkgConfig; } or
@@ -17,8 +19,8 @@ eval { require ExtUtils::PkgConfig; } or
 eval { ExtUtils::PkgConfig->find("termkey"); } or
    die "OS unsupported - pkg-config cannot find termkey\n$LIBTERMKEY_MESSAGE";
 
-my $version = ExtUtils::PkgConfig->modversion("termkey");
-$version >= 0.9 or die "OS unsupported - termkey too old ($version)\n$LIBTERMKEY_MESSAGE";
+ExtUtils::PkgConfig->atleast_version("termkey", $NEED_TERMKEY_VERSION) or
+   die "OS unsupported - termkey too old; need at least $NEED_TERMKEY_VERSION\n$LIBTERMKEY_MESSAGE";
 
 my $cflags = ExtUtils::PkgConfig->cflags("termkey");
 my $libs   = ExtUtils::PkgConfig->libs("termkey");

@@ -17,7 +17,7 @@ typedef struct key_extended {
 typedef struct termkey_with_fh {
   TermKey *tk;
   SV      *fh;
-  int      flags;
+  int      flag_eintr;
 } *Term__TermKey;
 
 static void setup_constants(void)
@@ -60,6 +60,9 @@ static void setup_constants(void)
   DO_CONSTANT(TERMKEY_FLAG_SPACESYMBOL)
   DO_CONSTANT(TERMKEY_FLAG_CTRLC)
   DO_CONSTANT(TERMKEY_FLAG_EINTR)
+
+  DO_CONSTANT(TERMKEY_CANON_SPACESYMBOL)
+  DO_CONSTANT(TERMKEY_CANON_DELBS)
 
   DO_CONSTANT(TERMKEY_FORMAT_LONGMOD)
   DO_CONSTANT(TERMKEY_FORMAT_CARETCTRL)
@@ -257,7 +260,7 @@ new(package, term, flags=0)
       RETVAL->fh = NULL;
     }
     RETVAL->tk = termkey_new(fd, flags | TERMKEY_FLAG_EINTR);
-    RETVAL->flags = flags;
+    RETVAL->flag_eintr = flags & TERMKEY_FLAG_EINTR;
   OUTPUT:
     RETVAL
 
@@ -275,7 +278,10 @@ int
 get_flags(self)
   Term::TermKey self
   CODE:
-    RETVAL = self->flags;
+    /* Still need to read flags out of underlying termkey instance to get
+     * flags it might modify - UTF-8 or RAW */
+    RETVAL = self->flag_eintr |
+             (termkey_get_flags(self->tk) & ~TERMKEY_FLAG_EINTR);
   OUTPUT:
     RETVAL
 
@@ -284,8 +290,24 @@ set_flags(self, newflags)
   Term::TermKey self
   int newflags
   CODE:
-    self->flags = newflags;
+    self->flag_eintr = newflags & TERMKEY_FLAG_EINTR;
     termkey_set_flags(self->tk, newflags | TERMKEY_FLAG_EINTR);
+  OUTPUT:
+
+int
+get_canonflags(self)
+  Term::TermKey self
+  CODE:
+    RETVAL = termkey_get_canonflags(self->tk);
+  OUTPUT:
+    RETVAL
+
+void
+set_canonflags(self, newcanonflags)
+  Term::TermKey self
+  int newcanonflags
+  CODE:
+    termkey_set_canonflags(self->tk, newcanonflags);
   OUTPUT:
 
 int
@@ -342,7 +364,7 @@ waitkey(self, key)
 
       if(res != TERMKEY_RES_ERROR)
         break;
-      if(errno != EINTR || self->flags & TERMKEY_FLAG_EINTR)
+      if(errno != EINTR || self->flag_eintr)
         break;
 
       PERL_ASYNC_CHECK();
@@ -360,7 +382,7 @@ advisereadable(self)
 
       if(RETVAL != TERMKEY_RES_ERROR)
         break;
-      if(errno != EINTR || self->flags & TERMKEY_FLAG_EINTR)
+      if(errno != EINTR || self->flag_eintr)
         break;
 
       PERL_ASYNC_CHECK();

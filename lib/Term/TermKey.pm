@@ -8,7 +8,7 @@ package Term::TermKey;
 use strict;
 use warnings;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 use Exporter 'import';
 
@@ -86,6 +86,14 @@ Accessor and mutator for the flags. One of the C<FLAG_UTF8> or C<FLAG_RAW>
 flags will be set, even if neither was present in the constructor, as in this
 case the library will attempt to detect if the current locale is UTF-8 aware
 or not.
+
+=cut
+
+=head2 $canonflags = $tk->get_canonflags
+
+=head2 $tk->set_canonflags( $newcanonflags )
+
+Accessor and mutator for the canonicalisation flags.
 
 =cut
 
@@ -438,8 +446,7 @@ C<tcsetattr()> C<termios> function on it to set in canonical input mode.
 
 =item C<FLAG_SPACESYMBOL>
 
-Make the Space key appear as a named symbol. Without this flag, it appears as
-a normal Unicode character.
+Sets the C<CANON_SPACESYMBOL> canonicalisation flag. See below.
 
 =item C<FLAG_CTRLC>
 
@@ -451,6 +458,25 @@ as a modified Unicode keypress.
 Disable retry on signal interrupt; instead report it as an error with
 C<RES_ERROR> and C<$!> set to C<EINTR>. Without this flag, IO operations will
 be retried if interrupted.
+
+=back
+
+These constants are canonicalisation flags for C<set_canonflags> and
+C<get_canonflags>
+
+=over 4
+
+=item C<CANON_SPACESYMBOL>
+
+With this flag set, the Space key will appear as a C<TYPE_KEYSYM> key event
+whose symname is C<"Space">. Without this flag, it appears as a normal
+C<TYPE_UNICODE> character.
+
+=item C<CANON_DELBS>
+
+With this flag set, the ASCII C<DEL> byte is interpreted as the C<"Backspace">
+keysym, rather than C<"DEL">. This flag does not affect the interpretation of
+ASCII C<BS>, which is always represented as C<"Backspace">.
 
 =back
 
@@ -606,23 +632,10 @@ the C<advisereadable()> method in an asynchronous program.
     }
  }
 
-See also the L<Term::TermKey::Async> module which provides a convenient
-wrapping of C<Term::TermKey> for an L<IO::Async>-based program.
+There may also be more appropriate modules on CPAN for particular event
+frameworks; see the C<SEE ALSO> section below.
 
 =cut
-
-=head1 TODO
-
-=over 4
-
-=item *
-
-Consider if C<< $key = $tk->waitkey >> is a better API. While underlying
-library only returns C<RES_KEY> or C<RES_NONE> that works but if it ever gains
-another value, all bets are off. Return undef and have a C<< ->err >> method?
-Going into messyland...
-
-=back
 
 =head1 SEE ALSO
 
@@ -630,7 +643,20 @@ Going into messyland...
 
 =item *
 
-L<http://www.leonerd.org.uk/code/libtermkey/> - libtermkey home page
+L<http://www.leonerd.org.uk/code/libtermkey/> - C<libtermkey> home page
+
+=item *
+
+L<Term::TermKey::Async> - terminal key input using C<libtermkey> with
+L<IO::Async>
+
+=item *
+
+L<POE::Wheel::TermKey> - terminal key input using C<libtermkey> with L<POE>
+
+=item *
+
+L<AnyEvent::TermKey> - terminal key input using C<libtermkey> with L<AnyEvent>
 
 =back
 

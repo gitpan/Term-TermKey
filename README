@@ -1,5 +1,5 @@
 NAME
-    "Term::TermKey" - perl wrapper around "libtermkey"
+    `Term::TermKey' - perl wrapper around `libtermkey'
 
 SYNOPSIS
      use Term::TermKey;
@@ -13,11 +13,14 @@ SYNOPSIS
      print "You pressed: " . $tk->format_key( $key, 0 );
 
 DESCRIPTION
-    This module provides a light perl wrapper around the "libtermkey"
+    This module provides a light perl wrapper around the `libtermkey'
     library. This library attempts to provide an abstract way to read
     keypress events in terminal-based programs by providing structures that
     describe keys, rather than simply returning raw bytes as read from the
     TTY device.
+
+    This version of `Term::TermKey' requires `libtermkey' version at least
+    0.12.
 
   Multi-byte keys, ambiguous keys, and waittime
     Some keypresses generate multiple bytes from the terminal. There is also
@@ -37,16 +40,20 @@ DESCRIPTION
 
 CONSTRUCTOR
   $tk = Term::TermKey->new( $term, $flags )
-    Construct a new "Term::TermKey" object that wraps the given term handle.
-    $term should be either an IO handle reference or an integer containing a
-    plain POSIX file descriptor. $flags is optional, but if given, should
-    contain the flags to pass to "libtermkey"'s constructor. Assumes a
-    default of 0 if not supplied. See the "FLAG_*" constants.
+    Construct a new `Term::TermKey' object that wraps the given term handle.
+    `$term' should be either an IO handle reference, an integer containing a
+    plain POSIX file descriptor, of `undef'. `$flags' is optional, but if
+    given, should contain the flags to pass to `libtermkey''s constructor.
+    Assumes a default of 0 if not supplied. See the `FLAG_*' constants.
+
+    If `$term' is `undef' or `-1', then no term handle will be associated
+    with this instance. Input may be fed to it using the `push_bytes()'
+    method, rather than `waitkey()' or `advisereadable()'.
 
 METHODS
   $flags = $tk->get_flags
   $tk->set_flags( $newflags )
-    Accessor and mutator for the flags. One of the "FLAG_UTF8" or "FLAG_RAW"
+    Accessor and mutator for the flags. One of the `FLAG_UTF8' or `FLAG_RAW'
     flags will be set, even if neither was present in the constructor, as in
     this case the library will attempt to detect if the current locale is
     UTF-8 aware or not.
@@ -58,102 +65,109 @@ METHODS
   $msec = $tk->get_waittime
   $tk->set_waittime( $msec )
     Accessor and mutator for the maximum wait time in miliseconds. The
-    underlying "libtermkey" library will have specified a default value when
+    underlying `libtermkey' library will have specified a default value when
     the object was constructed.
 
   $res = $tk->getkey( $key )
     Attempt to retrieve a single keypress event from the buffer, and put it
-    in $key. If successful, will return "RES_KEY" to indicate that the $key
-    structure now contains a new keypress event. If $key is an undefined
-    lvalue (such as a new scalar variable) it will be initialised to contain
-    a new key structure.
+    in `$key'. If successful, will return `RES_KEY' to indicate that the
+    `$key' structure now contains a new keypress event. If `$key' is an
+    undefined lvalue (such as a new scalar variable) it will be initialised
+    to contain a new key structure.
 
-    If nothing is in the buffer it will return "RES_NONE". If the buffer
+    If nothing is in the buffer it will return `RES_NONE'. If the buffer
     contains a partial keypress event which does not yet contain all the
-    bytes required, it will return "RES_AGAIN" (see above section about
+    bytes required, it will return `RES_AGAIN' (see above section about
     multibyte events). If no events are ready and the input stream is now
-    closed, will return "RES_EOF".
+    closed, will return `RES_EOF'.
 
     This method will not block, nor will it perform any IO on the underlying
-    file descriptor. For a normal blocking read, see "waitkey()".
+    file descriptor. For a normal blocking read, see `waitkey()'.
 
   $res = $tk->getkey_force( $key )
-    Similar to "getkey()", but will not return "RES_AGAIN" if a partial
+    Similar to `getkey()', but will not return `RES_AGAIN' if a partial
     match was found. Instead, it will force an interpretation of the bytes,
-    even if this means interpreting the start of an "<Esc>"-prefixed
-    multibyte sequence as a literal "Escape" key followed by normal letters.
-    If $key is an undefined lvalue (such as a new scalar variable) it will
+    even if this means interpreting the start of an `<Esc>'-prefixed
+    multibyte sequence as a literal `Escape' key followed by normal letters.
+    If `$key' is an undefined lvalue (such as a new scalar variable) it will
     be initialised to contain a new key structure.
 
     This method will not block, nor will it perform any IO on the underlying
-    file descriptor. For a normal blocking read, see "waitkey()".
+    file descriptor. For a normal blocking read, see `waitkey()'.
 
   $res = $tk->waitkey( $key )
     Attempt to retrieve a single keypress event from the buffer, or block
-    until one is available. If successful, will return "RES_KEY" to indicate
-    that the $key structure now contains a new keypress event. If an IO
-    error occurs it will return "RES_ERROR", and if the input stream is now
-    closed it will return "RES_EOF".
+    until one is available. If successful, will return `RES_KEY' to indicate
+    that the `$key' structure now contains a new keypress event. If an IO
+    error occurs it will return `RES_ERROR', and if the input stream is now
+    closed it will return `RES_EOF'.
 
-    If $key is an undefined lvalue (such as a new scalar variable) it will
+    If `$key' is an undefined lvalue (such as a new scalar variable) it will
     be initialised to contain a new key structure.
 
   $res = $tk->advisereadable
     Inform the underlying library that new input may be available on the
-    underlying file descriptor and so it should call "read()" to obtain it.
-    Will return "RES_AGAIN" if it read at least one more byte, "RES_NONE" if
-    no more input was found, or "RES_ERROR" if an IO error occurs.
+    underlying file descriptor and so it should call `read()' to obtain it.
+    Will return `RES_AGAIN' if it read at least one more byte, `RES_NONE' if
+    no more input was found, or `RES_ERROR' if an IO error occurs.
 
     Normally this method would only be used in programs that want to use
-    "Term::TermKey" asynchronously; see the EXAMPLES section. This method
-    gracefully handles an "EAGAIN" error from the underlying "read()"
+    `Term::TermKey' asynchronously; see the EXAMPLES section. This method
+    gracefully handles an `EAGAIN' error from the underlying `read()'
     syscall.
+
+  $len = $tk->push_bytes( $bytes )
+    Feed more bytes into the input buffer. This is primarily useful for
+    feeding input into filehandle-less instances, constructed by passing
+    `undef' or `-1' as the filehandle to the constructor. After calling this
+    method, these bytes will be available to read as keypresses by the
+    `getkey' method.
 
   $str = $tk->get_keyname( $sym )
     Returns the name of a key sym, such as returned by
-    "Term::TermKey::Key->sym()".
+    `Term::TermKey::Key->sym()'.
 
   $sym = $tk->keyname2sym( $keyname )
     Look up the sym for a named key. The result of this method call can be
     compared directly against the value returned by
-    "Term::TermKey::Key->sym()". Because this method has to perform a linear
+    `Term::TermKey::Key->sym()'. Because this method has to perform a linear
     search of key names, it is best called rarely, perhaps during program
     initialisation, and the result stored for easier comparisons during
     runtime.
 
   ( $ev, $button, $line, $col ) = $tk->interpret_mouse( $key )
-    If $key contains a mouse event then its details are returned in a list.
-    $ev will be one of the "TERMKEY_MOUSE_*" constants, $button will be the
-    button number it relates to, and $line and $col will give the screen
-    coordinates, numbered from 1. If $key does not contain a mouse event
-    then an empty list is returned.
+    If `$key' contains a mouse event then its details are returned in a
+    list. `$ev' will be one of the `TERMKEY_MOUSE_*' constants, `$button'
+    will be the button number it relates to, and `$line' and `$col' will
+    give the screen coordinates, numbered from 1. If `$key' does not contain
+    a mouse event then an empty list is returned.
 
   $str = $tk->format_key( $key, $format )
-    Return a string representation of the keypress event in $key, following
-    the flags given. See the descriptions of the flags, below, for more
-    detail.
+    Return a string representation of the keypress event in `$key',
+    following the flags given. See the descriptions of the flags, below, for
+    more detail.
 
     This may be useful for matching keypress events against keybindings
     stored in a hash. See EXAMPLES section for more detail.
 
   $key = $tk->parse_key( $str, $format )
-    Return a keypress event by parsing the string representation in $str,
-    following the flags given. This method is an inverse of "format_key".
+    Return a keypress event by parsing the string representation in `$str',
+    following the flags given. This method is an inverse of `format_key'.
 
     This may be useful for parsing entries from a configuration file or
     similar.
 
   $key = $tk->parse_key_at_pos( $str, $format )
     Return a keypress event by parsing the string representation in a region
-    of $str, following the flags given.
+    of `$str', following the flags given.
 
-    Where "parse_key" will start at the beginning of the string and requires
+    Where `parse_key' will start at the beginning of the string and requires
     the entire input to be consumed, this method will start at the current
-    "pos()" position in $str (or at the beginning of the string if none is
+    `pos()' position in `$str' (or at the beginning of the string if none is
     yet set), and after a successful parse, will update it to the end of the
     matched section. This position does not have to be at the end of the
-    string. $str must therefore be a real scalar variable, and not a string
-    literal.
+    string. `$str' must therefore be a real scalar variable, and not a
+    string literal.
 
     This may be useful for incremental parsing of configuration or other
     data, out of a larger string.
@@ -164,24 +178,24 @@ METHODS
     ordered first by type (unicode, keysym, function, mouse), then by value
     within that type, then finally by modifier bits.
 
-    This may be useful in "sort" expressions:
+    This may be useful in `sort' expressions:
 
      my @sorted_keys = sort { $tk->keycmp( $a, $b ) } @keys;
 
 KEY OBJECTS
-    The "Term::TermKey::Key" subclass is used to store a single keypress
-    event. Objects in this class cannot be changed by perl code. "getkey()",
-    "getkey_force()" or "waitkey()" will overwrite the contents of the
+    The `Term::TermKey::Key' subclass is used to store a single keypress
+    event. Objects in this class cannot be changed by perl code. `getkey()',
+    `getkey_force()' or `waitkey()' will overwrite the contents of the
     structure with a new value.
 
-    Keys cannot be constructed, but "getkey()", "getkey_force()" or
-    "waitkey()" will place a new key structure in the $key variable if it is
-    undefined when they are called. "parse_key()" and "parse_key_at_pos()"
-    will return new keys.
+    Keys cannot be constructed, but `getkey()', `getkey_force()' or
+    `waitkey()' will place a new key structure in the `$key' variable if it
+    is undefined when they are called. `parse_key()' and
+    `parse_key_at_pos()' will return new keys.
 
   $key->type
-    The type of event. One of "TYPE_UNICODE", "TYPE_FUNCTION",
-    "TYPE_KEYSYM", "TYPE_MOUSE".
+    The type of event. One of `TYPE_UNICODE', `TYPE_FUNCTION',
+    `TYPE_KEYSYM', `TYPE_MOUSE'.
 
   $key->type_is_unicode
   $key->type_is_function
@@ -189,22 +203,22 @@ KEY OBJECTS
   $key->type_is_mouse
     Shortcuts which return a boolean.
 
-    In the case of a mouse event, you must use the "interpret_mouse" method
-    on the containing "Term::TermKey" object to access the event details.
+    In the case of a mouse event, you must use the `interpret_mouse' method
+    on the containing `Term::TermKey' object to access the event details.
 
   $key->codepoint
-    The Unicode codepoint number for "TYPE_UNICODE", or 0 otherwise.
+    The Unicode codepoint number for `TYPE_UNICODE', or 0 otherwise.
 
   $key->number
-    The function key number for "TYPE_FUNCTION", or 0 otherwise.
+    The function key number for `TYPE_FUNCTION', or 0 otherwise.
 
   $key->sym
-    The key symbol number for "TYPE_KEYSYM", or 0 otherwise. This can be
-    passed to "Term::TermKey->get_keyname()", or compared to a result
-    earlier obtained from "Term::TermKey->keyname2sym()".
+    The key symbol number for `TYPE_KEYSYM', or 0 otherwise. This can be
+    passed to `Term::TermKey->get_keyname()', or compared to a result
+    earlier obtained from `Term::TermKey->keyname2sym()'.
 
   $key->modifiers
-    The modifier bitmask. Can be compared against the "KEYMOD_*" constants.
+    The modifier bitmask. Can be compared against the `KEYMOD_*' constants.
 
   $key->modifier_shift
   $key->modifier_alt
@@ -213,158 +227,158 @@ KEY OBJECTS
 
   $key->utf8
     A string representation of the given Unicode codepoint. If the
-    underlying "termkey" library is in UTF-8 mode then this will be a UTF-8
+    underlying `termkey' library is in UTF-8 mode then this will be a UTF-8
     string. If it is in raw mode, then this will be a single raw byte.
 
   $key->termkey
-    Return the underlying "Term::TermKey" object this key was retrieved
+    Return the underlying `Term::TermKey' object this key was retrieved
     from.
 
   $str = $key->format( $format )
     Returns a string representation of the keypress event, identically to
-    calling "format_key" on the underlying "Term::TermKey" object.
+    calling `format_key' on the underlying `Term::TermKey' object.
 
 EXPORTED CONSTANTS
     The following constant names are all derived from the underlying
-    "libtermkey" library. For more detail see the documentation on the
+    `libtermkey' library. For more detail see the documentation on the
     library.
 
-    These constants are possible values of "$key->type"
+    These constants are possible values of `$key->type'
 
-    "TYPE_UNICODE"
+    `TYPE_UNICODE'
         a Unicode codepoint
 
-    "TYPE_FUNCTION"
+    `TYPE_FUNCTION'
         a numbered function key
 
-    "TYPE_KEYSYM"
+    `TYPE_KEYSYM'
         a symbolic key
 
-    "TYPE_MOUSE"
+    `TYPE_MOUSE'
         a mouse movement or button press or release
 
-    These constants are result values from "getkey()", "getkey_force()",
-    "waitkey()" or "advisereadable()"
+    These constants are result values from `getkey()', `getkey_force()',
+    `waitkey()' or `advisereadable()'
 
-    "RES_NONE"
+    `RES_NONE'
         No key event is ready.
 
-    "RES_KEY"
+    `RES_KEY'
         A key event has been provided.
 
-    "RES_EOF"
+    `RES_EOF'
         No key events are ready and the terminal has been closed, so no more
         will arrive.
 
-    "RES_AGAIN"
+    `RES_AGAIN'
         No key event is ready yet, but a partial one has been found. This is
-        only returned by "getkey()". To obtain the partial result even if it
-        never completes, call "getkey_force()".
+        only returned by `getkey()'. To obtain the partial result even if it
+        never completes, call `getkey_force()'.
 
-    "RES_ERROR"
-        Returned by "waitkey" or "advisereadable" if an IO error occurs
+    `RES_ERROR'
+        Returned by `waitkey' or `advisereadable' if an IO error occurs
         while trying to read another key event.
 
-    These constants are key modifier masks for "$key->modifiers"
+    These constants are key modifier masks for `$key->modifiers'
 
-    "KEYMOD_SHIFT"
-    "KEYMOD_ALT"
-    "KEYMOD_CTRL"
+    `KEYMOD_SHIFT'
+    `KEYMOD_ALT'
+    `KEYMOD_CTRL'
         Should be obvious ;)
 
     These constants are types of mouse event which may be returned by
-    "interpret_mouse":
+    `interpret_mouse':
 
-    "TERMKEY_MOUSE_UNKNOWN"
+    `TERMKEY_MOUSE_UNKNOWN'
         The type of mouse event was not recognised
 
-    "TERMKEY_MOUSE_PRESS"
+    `TERMKEY_MOUSE_PRESS'
         The event reports a mouse button being pressed
 
-    "TERMKEY_MOUSE_DRAG"
+    `TERMKEY_MOUSE_DRAG'
         The event reports the mouse being moved while a button is held down
 
-    "TERMKEY_MOUSE_RELEASE"
+    `TERMKEY_MOUSE_RELEASE'
         The event reports the mouse buttons being released, or the mouse
         moved without a button held.
 
-    These constants are flags for the constructor, "Term::TermKey->new"
+    These constants are flags for the constructor, `Term::TermKey->new'
 
-    "FLAG_NOINTERPRET"
-        Do not attempt to interpret C0 codes into keysyms (ie. "Backspace",
-        "Tab", "Enter", "Escape"). Instead report them as plain
-        "Ctrl-letter" events.
+    `FLAG_NOINTERPRET'
+        Do not attempt to interpret C0 codes into keysyms (ie. `Backspace',
+        `Tab', `Enter', `Escape'). Instead report them as plain
+        `Ctrl-letter' events.
 
-    "FLAG_CONVERTKP"
+    `FLAG_CONVERTKP'
         Convert xterm's alternate keypad symbols into the plain ASCII codes
         they would represent.
 
-    "FLAG_RAW"
+    `FLAG_RAW'
         Ignore locale settings; do not attempt to recombine UTF-8 sequences.
         Instead report only raw values.
 
-    "FLAG_UTF8"
+    `FLAG_UTF8'
         Ignore locale settings; force UTF-8 recombining on.
 
-    "FLAG_NOTERMIOS"
+    `FLAG_NOTERMIOS'
         Even if the terminal file descriptor represents a TTY device, do not
-        call the "tcsetattr()" "termios" function on it to set in canonical
+        call the `tcsetattr()' `termios' function on it to set in canonical
         input mode.
 
-    "FLAG_SPACESYMBOL"
-        Sets the "CANON_SPACESYMBOL" canonicalisation flag. See below.
+    `FLAG_SPACESYMBOL'
+        Sets the `CANON_SPACESYMBOL' canonicalisation flag. See below.
 
-    "FLAG_CTRLC"
-        Disable the "SIGINT" behaviour of the "Ctrl-C" key, allowing it to
+    `FLAG_CTRLC'
+        Disable the `SIGINT' behaviour of the `Ctrl-C' key, allowing it to
         be read as a modified Unicode keypress.
 
-    "FLAG_EINTR"
+    `FLAG_EINTR'
         Disable retry on signal interrupt; instead report it as an error
-        with "RES_ERROR" and $! set to "EINTR". Without this flag, IO
+        with `RES_ERROR' and `$!' set to `EINTR'. Without this flag, IO
         operations will be retried if interrupted.
 
-    These constants are canonicalisation flags for "set_canonflags" and
-    "get_canonflags"
+    These constants are canonicalisation flags for `set_canonflags' and
+    `get_canonflags'
 
-    "CANON_SPACESYMBOL"
-        With this flag set, the Space key will appear as a "TYPE_KEYSYM" key
-        event whose symname is "Space". Without this flag, it appears as a
-        normal "TYPE_UNICODE" character.
+    `CANON_SPACESYMBOL'
+        With this flag set, the Space key will appear as a `TYPE_KEYSYM' key
+        event whose symname is `"Space"'. Without this flag, it appears as a
+        normal `TYPE_UNICODE' character.
 
-    "CANON_DELBS"
-        With this flag set, the ASCII "DEL" byte is interpreted as the
-        "Backspace" keysym, rather than "DEL". This flag does not affect the
-        interpretation of ASCII "BS", which is always represented as
-        "Backspace".
+    `CANON_DELBS'
+        With this flag set, the ASCII `DEL' byte is interpreted as the
+        `"Backspace"' keysym, rather than `"DEL"'. This flag does not affect
+        the interpretation of ASCII `BS', which is always represented as
+        `"Backspace"'.
 
-    These constants are flags to "format_key"
+    These constants are flags to `format_key'
 
-    "FORMAT_LONGMOD"
-        Print full modifier names e.g. "Shift-" instead of abbreviating to
-        "S-".
+    `FORMAT_LONGMOD'
+        Print full modifier names e.g. `Shift-' instead of abbreviating to
+        `S-'.
 
-    "FORMAT_CARETCTRL"
-        If the only modifier is "Ctrl" on a plain character, render it as
-        "^X".
+    `FORMAT_CARETCTRL'
+        If the only modifier is `Ctrl' on a plain character, render it as
+        `^X'.
 
-    "FORMAT_ALTISMETA"
-        Use the name "Meta" or the letter "M" instead of "Alt" or "A".
+    `FORMAT_ALTISMETA'
+        Use the name `Meta' or the letter `M' instead of `Alt' or `A'.
 
-    "FORMAT_WRAPBRACKET"
+    `FORMAT_WRAPBRACKET'
         If the key event is a special key instead of unmodified Unicode,
-        wrap it in "<brackets>".
+        wrap it in `<brackets>'.
 
-    "FORMAT_MOUSE_POS"
+    `FORMAT_MOUSE_POS'
         If the event is a mouse event, also include the cursor position;
-        rendered as "@ ($col,$line)"
+        rendered as `@ ($col,$line)'
 
-    "FORMAT_VIM"
-        Shortcut to "FORMAT_ALTISMETA|FORMAT_WRAPBRACKET"; which gives an
+    `FORMAT_VIM'
+        Shortcut to `FORMAT_ALTISMETA|FORMAT_WRAPBRACKET'; which gives an
         output close to the format the vim editor uses.
 
 EXAMPLES
-  A simple print-until-"Ctrl-C" loop
-    This program just prints every keypress until the user presses "Ctrl-C".
+  A simple print-until-`Ctrl-C' loop
+    This program just prints every keypress until the user presses `Ctrl-C'.
 
      use Term::TermKey qw( FLAG_UTF8 RES_EOF FORMAT_VIM );
  
@@ -378,7 +392,7 @@ EXAMPLES
      }
 
   Configuration of custom keypresses
-    Because "format_key()" yields a plain string representation of a
+    Because `format_key()' yields a plain string representation of a
     keypress it can be used as a hash key to look up a "handler" routine for
     the key.
 
@@ -425,8 +439,8 @@ EXAMPLES
      }
 
   Asynchronous operation
-    Because the "getkey()" method performs no IO itself, it can be combined
-    with the "advisereadable()" method in an asynchronous program.
+    Because the `getkey()' method performs no IO itself, it can be combined
+    with the `advisereadable()' method in an asynchronous program.
 
      use IO::Select;
      use Term::TermKey qw(
@@ -477,18 +491,17 @@ EXAMPLES
      }
 
     There may also be more appropriate modules on CPAN for particular event
-    frameworks; see the "SEE ALSO" section below.
+    frameworks; see the `SEE ALSO' section below.
 
 SEE ALSO
-    *   <http://www.leonerd.org.uk/code/libtermkey/> - "libtermkey" home
-        page
+    *   http://www.leonerd.org.uk/code/libtermkey/ - `libtermkey' home page
 
-    *   Term::TermKey::Async - terminal key input using "libtermkey" with
+    *   Term::TermKey::Async - terminal key input using `libtermkey' with
         IO::Async
 
-    *   POE::Wheel::TermKey - terminal key input using "libtermkey" with POE
+    *   POE::Wheel::TermKey - terminal key input using `libtermkey' with POE
 
-    *   AnyEvent::TermKey - terminal key input using "libtermkey" with
+    *   AnyEvent::TermKey - terminal key input using `libtermkey' with
         AnyEvent
 
 AUTHOR

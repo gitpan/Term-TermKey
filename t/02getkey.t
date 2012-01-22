@@ -3,24 +3,17 @@
 use strict;
 use warnings;
 
-use Test::More tests => 31;
+use Test::More tests => 27;
 use Test::Refcount;
 
-use IO::Handle;
-
 use Term::TermKey;
-
-pipe( my ( $rd, $wr ) ) or die "Cannot pipe() - $!";
 
 # Sanitise this just in case
 $ENV{TERM} = "vt100";
 
-is_oneref( $rd, '$rd has refcount 1 initially' );
-
-my $tk = Term::TermKey->new( $rd, 0 );
+my $tk = Term::TermKey->new( undef, 0 );
 
 is_oneref( $tk, '$tk has refcount 1 initially' );
-is_refcount( $rd, 2, '$rd has refcount 2 after Term::TermKey->new' );
 
 my $key;
 
@@ -31,11 +24,7 @@ ok( defined $key, '$key is defined' );
 is_oneref( $key, '$key has refcount 1 after getkey()' );
 is_refcount( $tk, 2, '$tk has refcount 2 after getkey()' );
 
-$wr->syswrite( "h" );
-
-is( $tk->getkey( $key ), RES_NONE, 'getkey yields RES_NONE before advisereadable' );
-
-$tk->advisereadable;
+is( $tk->push_bytes( "h" ), 1, 'push_bytes consumes 1 byte' );
 
 is( $tk->getkey( $key ), RES_KEY, 'getkey yields RES_KEY after h' );
 
@@ -51,9 +40,7 @@ is( $key->format( 0 ), "h", '$key->format after h' );
 
 is( $tk->getkey( $key ), RES_NONE, 'getkey yields RES_NONE a second time' );
 
-$wr->syswrite( "\cA" );
-
-$tk->advisereadable;
+$tk->push_bytes( "\cA" );
 
 is( $tk->getkey( $key ), RES_KEY, 'getkey yields RES_KEY after C-a' );
 
@@ -63,9 +50,7 @@ is( $key->modifiers, KEYMOD_CTRL, '$key->modifiers after C-a' );
 
 is( $key->format( 0 ), "C-a", '$key->format after C-a' );
 
-$wr->syswrite( "\eOA" );
-
-$tk->advisereadable;
+$tk->push_bytes( "\eOA" );
 
 is( $tk->getkey( $key ), RES_KEY, 'getkey yields RES_KEY after Up' );
 
@@ -81,9 +66,3 @@ is_refcount( $tk, 2, '$tk has refcount 2 before dropping key' );
 undef $key;
 
 is_oneref( $tk, '$k has refcount 1 before EOF' );
-
-is_refcount( $rd, 2, '$rd has refcount 2 before dropping $tk' );
-
-undef $tk;
-
-is_oneref( $rd, '$rd has refcount 1 before EOF' );

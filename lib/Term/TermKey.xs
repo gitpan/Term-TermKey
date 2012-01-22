@@ -1,3 +1,9 @@
+/*  You may distribute under the terms of either the GNU General Public License
+ *  or the Artistic License (the same terms as Perl itself)
+ *
+ *  (C) Paul Evans, 2009-2012 -- leonerd@leonerd.org.uk
+ */
+
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
@@ -251,7 +257,11 @@ new(package, term, flags=0)
     int fd;
   CODE:
     Newx(RETVAL, 1, struct termkey_with_fh);
-    if(SvROK(term)) {
+    if(!SvOK(term)) {
+      fd = -1;
+      RETVAL->fh = NULL;
+    }
+    else if(SvROK(term)) {
       fd = PerlIO_fileno(IoIFP(sv_2io(term)));
       RETVAL->fh = SvREFCNT_inc(SvRV(term));
     }
@@ -387,6 +397,15 @@ advisereadable(self)
 
       PERL_ASYNC_CHECK();
     }
+  OUTPUT:
+    RETVAL
+
+size_t
+push_bytes(self, bytes)
+  Term::TermKey self
+  SV           *bytes
+  CODE:
+    RETVAL = termkey_push_bytes(self->tk, SvPV_nolen(bytes), SvCUR(bytes));
   OUTPUT:
     RETVAL
 

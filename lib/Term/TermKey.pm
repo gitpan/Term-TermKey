@@ -1,14 +1,14 @@
 #  You may distribute under the terms of either the GNU General Public License
 #  or the Artistic License (the same terms as Perl itself)
 #
-#  (C) Paul Evans, 2009-2011 -- leonerd@leonerd.org.uk
+#  (C) Paul Evans, 2009-2012 -- leonerd@leonerd.org.uk
 
 package Term::TermKey;
 
 use strict;
 use warnings;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 use Exporter 'import';
 
@@ -38,6 +38,8 @@ This library attempts to provide an abstract way to read keypress events in
 terminal-based programs by providing structures that describe keys, rather
 than simply returning raw bytes as read from the TTY device.
 
+This version of C<Term::TermKey> requires C<libtermkey> version at least 0.12.
+
 =head2 Multi-byte keys, ambiguous keys, and waittime
 
 Some keypresses generate multiple bytes from the terminal. There is also the
@@ -64,10 +66,14 @@ character (U+FFFD) if it is incomplete after this time.
 =head2 $tk = Term::TermKey->new( $term, $flags )
 
 Construct a new C<Term::TermKey> object that wraps the given term handle.
-C<$term> should be either an IO handle reference or an integer containing a
-plain POSIX file descriptor. C<$flags> is optional, but if given, should
-contain the flags to pass to C<libtermkey>'s constructor. Assumes a default
-of 0 if not supplied. See the C<FLAG_*> constants.
+C<$term> should be either an IO handle reference, an integer containing a
+plain POSIX file descriptor, of C<undef>. C<$flags> is optional, but if
+given, should contain the flags to pass to C<libtermkey>'s constructor.
+Assumes a default of 0 if not supplied. See the C<FLAG_*> constants.
+
+If C<$term> is C<undef> or C<-1>, then no term handle will be associated
+with this instance. Input may be fed to it using the C<push_bytes()> method,
+rather than C<waitkey()> or C<advisereadable()>.
 
 =cut
 
@@ -162,6 +168,15 @@ more input was found, or C<RES_ERROR> if an IO error occurs.
 Normally this method would only be used in programs that want to use
 C<Term::TermKey> asynchronously; see the EXAMPLES section. This method
 gracefully handles an C<EAGAIN> error from the underlying C<read()> syscall.
+
+=cut
+
+=head2 $len = $tk->push_bytes( $bytes )
+
+Feed more bytes into the input buffer. This is primarily useful for feeding
+input into filehandle-less instances, constructed by passing C<undef> or C<-1>
+as the filehandle to the constructor. After calling this method, these bytes
+will be available to read as keypresses by the C<getkey> method.
 
 =cut
 

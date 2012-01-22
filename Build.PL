@@ -3,7 +3,7 @@ use warnings;
 
 use Module::Build;
 
-my $NEED_TERMKEY_VERSION = "0.10";
+my $NEED_TERMKEY_VERSION = "0.12";
 my $URL = "http://www.leonerd.org.uk/code/libtermkey/";
 my $LIBTERMKEY_MESSAGE = <<"EOF";
 

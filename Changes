@@ -1,5 +1,10 @@
 Revision history for Term-TermKey
 
+0.11    CHANGES:
+         * Updated for libtermkey 0.12:
+           + Wrap termkey_push_bytes function
+           + Support filehandle-less (abstract) instances
+
 0.10    CHANGES:
          * Updated for libtermkey 0.10:
            + Wrap TERMKEY_CANON_* flags and termkey_{get,set} functions

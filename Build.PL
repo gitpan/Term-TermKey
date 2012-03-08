@@ -2,33 +2,47 @@ use strict;
 use warnings;
 
 use Module::Build;
+use ExtUtils::PkgConfig;
 
-my $NEED_TERMKEY_VERSION = "0.12";
+my $NEED_TERMKEY_VERSION = "0.13";
 my $URL = "http://www.leonerd.org.uk/code/libtermkey/";
-my $LIBTERMKEY_MESSAGE = <<"EOF";
 
-Please download and install an up-to-date version of libtermkey from
+my $cflags;
+my $libs;
 
-  $URL
+if( eval { local *STDERR;
+           open STDERR, ">", "/dev/null"; 
+           ExtUtils::PkgConfig->find("termkey"); } and
+        ExtUtils::PkgConfig->atleast_version("termkey", $NEED_TERMKEY_VERSION ) ) {
+   $cflags = ExtUtils::PkgConfig->cflags("termkey");
+   $libs   = ExtUtils::PkgConfig->libs("termkey");
+}
+elsif( eval { require Alien::libtermkey } and
+         Alien::libtermkey->atleast_version( $NEED_TERMKEY_VERSION ) ) {
+   $cflags = Alien::libtermkey->cflags;
+   $libs   = Alien::libtermkey->libs;
+}
+else {
+   die "OS unsupported - libtermkey unavailable\n" . <<"EOF";
+
+This module requires libtermkey of at least version $NEED_TERMKEY_VERSION.
+
+Please obtain it by either:
+
+  1) Installing it from your OS vendor if it is supplied,
+
+  2) Installing the Alien::libtermkey CPAN module, or
+
+  3) Downloading and building it from:
+     $URL
 
 EOF
-
-eval { require ExtUtils::PkgConfig; } or
-   die "OS unsupported - no ExtUtils::PkgConfig\n";
-
-eval { ExtUtils::PkgConfig->find("termkey"); } or
-   die "OS unsupported - pkg-config cannot find termkey\n$LIBTERMKEY_MESSAGE";
-
-ExtUtils::PkgConfig->atleast_version("termkey", $NEED_TERMKEY_VERSION) or
-   die "OS unsupported - termkey too old; need at least $NEED_TERMKEY_VERSION\n$LIBTERMKEY_MESSAGE";
-
-my $cflags = ExtUtils::PkgConfig->cflags("termkey");
-my $libs   = ExtUtils::PkgConfig->libs("termkey");
+}
 
 my $build = Module::Build->new(
    module_name => 'Term::TermKey',
-   extra_compiler_flags => [ split( m/ /, $cflags ) ],
-   extra_linker_flags   => [ split( m/ /, $libs ) ],
+   extra_compiler_flags => [ split( m/ +/, $cflags ) ],
+   extra_linker_flags   => [ split( m/ +/, $libs ) ],
    configure_requires => {
       'Exporter' => '5.57',
       'ExtUtils::PkgConfig' => 0,

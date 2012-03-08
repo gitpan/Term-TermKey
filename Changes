@@ -1,5 +1,10 @@
 Revision history for Term-TermKey
 
+0.12    CHANGES:
+         * Updated for libtermkey 0.13:
+           + Wrap termkey_new_abstract, termkey_{get,set}_buffer_size
+         * Optionally use Alien::libtermkey if it is available
+
 0.11    CHANGES:
          * Updated for libtermkey 0.12:
            + Wrap termkey_push_bytes function

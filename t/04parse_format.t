@@ -7,7 +7,7 @@ use Test::More tests => 18;
 
 use Term::TermKey;
 
-my $tk = Term::TermKey->new( undef, FLAG_NOTERMIOS );
+my $tk = Term::TermKey->new_abstract( "vt100", FLAG_NOTERMIOS );
 
 my $key;
 

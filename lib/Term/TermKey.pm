@@ -8,7 +8,7 @@ package Term::TermKey;
 use strict;
 use warnings;
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 use Exporter 'import';
 
@@ -63,17 +63,20 @@ character (U+FFFD) if it is incomplete after this time.
 
 =cut
 
-=head2 $tk = Term::TermKey->new( $term, $flags )
+=head2 $tk = Term::TermKey->new( $fh, $flags )
 
 Construct a new C<Term::TermKey> object that wraps the given term handle.
-C<$term> should be either an IO handle reference, an integer containing a
-plain POSIX file descriptor, of C<undef>. C<$flags> is optional, but if
-given, should contain the flags to pass to C<libtermkey>'s constructor.
-Assumes a default of 0 if not supplied. See the C<FLAG_*> constants.
+C<$fh> should be either an IO handle reference, an integer referring to a
+plain POSIX file descriptor, of C<undef>. C<$flags> is optional, but if given
+should contain the flags to pass to C<libtermkey>'s constructor. Assumes a
+default of 0 if not supplied. See the C<FLAG_*> constants.
 
-If C<$term> is C<undef> or C<-1>, then no term handle will be associated
-with this instance. Input may be fed to it using the C<push_bytes()> method,
-rather than C<waitkey()> or C<advisereadable()>.
+=head2 $tk = Term::TermKey->new_abstract( $termtype, $flags )
+
+Construct a new abstract C<Term::TermKey> object not associated with a
+filehandle. Input may be fed to it using the C<push_bytes()> method
+rather than C<waitkey()> or C<advisereadable()>. The name of the termtype
+should be given in the C<$termtype> string.
 
 =cut
 
@@ -110,6 +113,21 @@ Accessor and mutator for the canonicalisation flags.
 Accessor and mutator for the maximum wait time in miliseconds. The underlying
 C<libtermkey> library will have specified a default value when the object was
 constructed.
+
+=cut
+
+=head2 $bytes = $tk->get_buffer_remaining
+
+Accessor returning the number of bytes of buffer space remaining in the
+buffer; the space in which C<push_bytes> can write.
+
+=head2 $bytes = $tk->get_buffer_size
+
+=head2 $tk->set_buffer_size( $size )
+
+Accessor and mutator to for the total buffer size to store pending bytes. If
+the underlying C<termkey_set_buffer_size(3)> call fails, the
+C<set_buffer_size> method will throw an exception.
 
 =cut
 

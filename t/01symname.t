@@ -7,7 +7,7 @@ use Test::More tests => 2;
 
 use Term::TermKey;
 
-my $tk = Term::TermKey->new( undef, 0 );
+my $tk = Term::TermKey->new_abstract( "vt100", 0 );
 
 defined $tk or die "Cannot create termkey instance";
 

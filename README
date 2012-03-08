@@ -39,16 +39,18 @@ DESCRIPTION
     character (U+FFFD) if it is incomplete after this time.
 
 CONSTRUCTOR
-  $tk = Term::TermKey->new( $term, $flags )
+  $tk = Term::TermKey->new( $fh, $flags )
     Construct a new `Term::TermKey' object that wraps the given term handle.
-    `$term' should be either an IO handle reference, an integer containing a
+    `$fh' should be either an IO handle reference, an integer referring to a
     plain POSIX file descriptor, of `undef'. `$flags' is optional, but if
-    given, should contain the flags to pass to `libtermkey''s constructor.
+    given should contain the flags to pass to `libtermkey''s constructor.
     Assumes a default of 0 if not supplied. See the `FLAG_*' constants.
 
-    If `$term' is `undef' or `-1', then no term handle will be associated
-    with this instance. Input may be fed to it using the `push_bytes()'
-    method, rather than `waitkey()' or `advisereadable()'.
+  $tk = Term::TermKey->new_abstract( $termtype, $flags )
+    Construct a new abstract `Term::TermKey' object not associated with a
+    filehandle. Input may be fed to it using the `push_bytes()' method
+    rather than `waitkey()' or `advisereadable()'. The name of the termtype
+    should be given in the `$termtype' string.
 
 METHODS
   $flags = $tk->get_flags
@@ -67,6 +69,16 @@ METHODS
     Accessor and mutator for the maximum wait time in miliseconds. The
     underlying `libtermkey' library will have specified a default value when
     the object was constructed.
+
+  $bytes = $tk->get_buffer_remaining
+    Accessor returning the number of bytes of buffer space remaining in the
+    buffer; the space in which `push_bytes' can write.
+
+  $bytes = $tk->get_buffer_size
+  $tk->set_buffer_size( $size )
+    Accessor and mutator to for the total buffer size to store pending
+    bytes. If the underlying `termkey_set_buffer_size(3)' call fails, the
+    `set_buffer_size' method will throw an exception.
 
   $res = $tk->getkey( $key )
     Attempt to retrieve a single keypress event from the buffer, and put it

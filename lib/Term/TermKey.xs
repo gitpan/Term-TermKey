@@ -250,27 +250,39 @@ BOOT:
   setup_constants();
 
 Term::TermKey
-new(package, term, flags=0)
-  SV *term
+new(package, fh, flags=0)
+  SV *fh
   int flags
   INIT:
     int fd;
   CODE:
     Newx(RETVAL, 1, struct termkey_with_fh);
-    if(!SvOK(term)) {
+    if(!SvOK(fh)) {
       fd = -1;
       RETVAL->fh = NULL;
     }
-    else if(SvROK(term)) {
-      fd = PerlIO_fileno(IoIFP(sv_2io(term)));
-      RETVAL->fh = SvREFCNT_inc(SvRV(term));
+    else if(SvROK(fh)) {
+      fd = PerlIO_fileno(IoIFP(sv_2io(fh)));
+      RETVAL->fh = SvREFCNT_inc(SvRV(fh));
     }
     else {
-      fd = SvIV(term);
+      fd = SvIV(fh);
       RETVAL->fh = NULL;
     }
     RETVAL->tk = termkey_new(fd, flags | TERMKEY_FLAG_EINTR);
     RETVAL->flag_eintr = flags & TERMKEY_FLAG_EINTR;
+  OUTPUT:
+    RETVAL
+
+Term::TermKey
+new_abstract(package, termtype, flags=0)
+  char *termtype
+  int flags
+  CODE:
+    Newx(RETVAL, 1, struct termkey_with_fh);
+    RETVAL->tk = termkey_new_abstract(termtype, flags | TERMKEY_FLAG_EINTR);
+    RETVAL->flag_eintr = flags & TERMKEY_FLAG_EINTR;
+    RETVAL->fh = NULL;
   OUTPUT:
     RETVAL
 
@@ -335,6 +347,30 @@ set_waittime(self, msec)
   CODE:
     termkey_set_waittime(self->tk, msec);
   OUTPUT:
+
+size_t
+get_buffer_remaining(self)
+  Term::TermKey self
+  CODE:
+    RETVAL = termkey_get_buffer_remaining(self->tk);
+  OUTPUT:
+    RETVAL
+
+size_t
+get_buffer_size(self)
+  Term::TermKey self
+  CODE:
+    RETVAL = termkey_get_buffer_size(self->tk);
+  OUTPUT:
+    RETVAL
+
+void
+set_buffer_size(self, size)
+  Term::TermKey self
+  size_t size
+  CODE:
+    if(!termkey_set_buffer_size(self->tk, size))
+      croak("termkey_set_buffer_size(): ", strerror(errno));
 
 int
 getkey(self, key)

@@ -4,7 +4,7 @@
       "Paul Evans <leonerd@leonerd.org.uk>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.38, CPAN::Meta::Converter version 2.113640",
+   "generated_by" : "Module::Build version 0.38, CPAN::Meta::Converter version 2.120630",
    "license" : [
       "perl_5"
    ],
@@ -16,26 +16,26 @@
    "prereqs" : {
       "build" : {
          "requires" : {
-            "ExtUtils::CBuilder" : 0,
-            "ExtUtils::PkgConfig" : 0,
-            "Module::Build" : 0,
-            "Module::Build::Compat" : 0,
-            "Test::More" : 0,
-            "Test::Refcount" : 0
+            "ExtUtils::CBuilder" : "0",
+            "ExtUtils::PkgConfig" : "0",
+            "Module::Build" : "0",
+            "Module::Build::Compat" : "0",
+            "Test::More" : "0",
+            "Test::Refcount" : "0"
          }
       },
       "configure" : {
          "requires" : {
             "Exporter" : "5.57",
-            "ExtUtils::PkgConfig" : 0,
-            "Module::Build" : 0
+            "ExtUtils::PkgConfig" : "0",
+            "Module::Build" : "0"
          }
       }
    },
    "provides" : {
       "Term::TermKey" : {
          "file" : "lib/Term/TermKey.pm",
-         "version" : "0.12"
+         "version" : "0.13"
       }
    },
    "release_status" : "stable",
@@ -44,5 +44,5 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.12"
+   "version" : "0.13"
 }

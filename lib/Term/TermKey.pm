@@ -8,7 +8,7 @@ package Term::TermKey;
 use strict;
 use warnings;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 use Exporter 'import';
 
@@ -86,6 +86,24 @@ should be given in the C<$termtype> string.
 
 # The following documents the various XS-implemented methods in TermKey.xs in
 # the same order
+
+=head2 $success = $tk->start
+
+=head2 $sucess = $tk->stop
+
+Start or stop IO interactions from the instance. Starting will send the
+terminal initialisation sequence and set up C<termios(5)> settings, stopping
+will send the terminal shutdown sequence and restore C<termios(5)> back to the
+initial values. After construction, a C<Term::TermKey> instance is already
+started, but these methods may be used to suspend and resume, for example, on
+receipt of a C<SIGTSTP> signal requesting that the application background
+itself.
+
+Returns false if it fails; C<$!> will contain an error code.
+
+=head2 $started = $tk->is_started
+
+Returns true if the instance has been started, or false if it is stopped.
 
 =head2 $flags = $tk->get_flags
 

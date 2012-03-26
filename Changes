@@ -1,5 +1,9 @@
 Revision history for Term-TermKey
 
+0.13    CHANGES:
+         * Updated for libtermkey 0.14:
+           + Wrap termkey_{start,stop}, termkey_is_started
+
 0.12    CHANGES:
          * Updated for libtermkey 0.13:
            + Wrap termkey_new_abstract, termkey_{get,set}_buffer_size

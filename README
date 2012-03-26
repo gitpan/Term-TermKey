@@ -53,6 +53,22 @@ CONSTRUCTOR
     should be given in the `$termtype' string.
 
 METHODS
+  $success = $tk->start
+  $sucess = $tk->stop
+    Start or stop IO interactions from the instance. Starting will send the
+    terminal initialisation sequence and set up `termios(5)' settings,
+    stopping will send the terminal shutdown sequence and restore
+    `termios(5)' back to the initial values. After construction, a
+    `Term::TermKey' instance is already started, but these methods may be
+    used to suspend and resume, for example, on receipt of a `SIGTSTP'
+    signal requesting that the application background itself.
+
+    Returns false if it fails; `$!' will contain an error code.
+
+  $started = $tk->is_started
+    Returns true if the instance has been started, or false if it is
+    stopped.
+
   $flags = $tk->get_flags
   $tk->set_flags( $newflags )
     Accessor and mutator for the flags. One of the `FLAG_UTF8' or `FLAG_RAW'

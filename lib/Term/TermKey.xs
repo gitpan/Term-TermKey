@@ -297,6 +297,30 @@ DESTROY(self)
   OUTPUT:
 
 int
+start(self)
+  Term::TermKey self
+  CODE:
+    RETVAL = termkey_start(self->tk);
+  OUTPUT:
+    RETVAL
+
+int
+stop(self)
+  Term::TermKey self
+  CODE:
+    RETVAL = termkey_stop(self->tk);
+  OUTPUT:
+    RETVAL
+
+int
+is_started(self)
+  Term::TermKey self
+  CODE:
+    RETVAL = termkey_is_started(self->tk);
+  OUTPUT:
+    RETVAL
+
+int
 get_flags(self)
   Term::TermKey self
   CODE:

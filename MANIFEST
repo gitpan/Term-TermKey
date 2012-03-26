@@ -2,6 +2,7 @@ Build.PL
 Changes
 examples/async.pl
 examples/lineeditor.pl
+examples/parse-inputrc.pl
 examples/simple.pl
 lib/Term/TermKey.pm
 lib/Term/TermKey.xs

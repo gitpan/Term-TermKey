@@ -1,5 +1,11 @@
 Revision history for Term-TermKey
 
+0.14    CHANGES:
+         * Updated for libtermkey 0.15:
+           + Support TERMKEY_TYPE_POSITION
+         * Provide accessors on key event objects for mouse and position report
+           details
+
 0.13    CHANGES:
          * Updated for libtermkey 0.14:
            + Wrap termkey_{start,stop}, termkey_is_started

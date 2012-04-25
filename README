@@ -20,7 +20,7 @@ DESCRIPTION
     TTY device.
 
     This version of `Term::TermKey' requires `libtermkey' version at least
-    0.12.
+    0.15.
 
   Multi-byte keys, ambiguous keys, and waittime
     Some keypresses generate multiple bytes from the terminal. There is also
@@ -165,10 +165,14 @@ METHODS
 
   ( $ev, $button, $line, $col ) = $tk->interpret_mouse( $key )
     If `$key' contains a mouse event then its details are returned in a
-    list. `$ev' will be one of the `TERMKEY_MOUSE_*' constants, `$button'
-    will be the button number it relates to, and `$line' and `$col' will
-    give the screen coordinates, numbered from 1. If `$key' does not contain
-    a mouse event then an empty list is returned.
+    list. `$ev' will be one of the `MOUSE_*' constants, `$button' will be
+    the button number it relates to, and `$line' and `$col' will give the
+    screen coordinates, numbered from 1. If `$key' does not contain a mouse
+    event then an empty list is returned.
+
+    This method isn't required any more, as the key event objects now have
+    accessor methods for these fields - see `mouseev', `button', `line' and
+    `col'.
 
   $str = $tk->format_key( $key, $format )
     Return a string representation of the keypress event in `$key',
@@ -223,16 +227,14 @@ KEY OBJECTS
 
   $key->type
     The type of event. One of `TYPE_UNICODE', `TYPE_FUNCTION',
-    `TYPE_KEYSYM', `TYPE_MOUSE'.
+    `TYPE_KEYSYM', `TYPE_MOUSE', `TYPE_POSITION'.
 
   $key->type_is_unicode
   $key->type_is_function
   $key->type_is_keysym
   $key->type_is_mouse
+  $key->type_is_position
     Shortcuts which return a boolean.
-
-    In the case of a mouse event, you must use the `interpret_mouse' method
-    on the containing `Term::TermKey' object to access the event details.
 
   $key->codepoint
     The Unicode codepoint number for `TYPE_UNICODE', or 0 otherwise.
@@ -257,6 +259,16 @@ KEY OBJECTS
     A string representation of the given Unicode codepoint. If the
     underlying `termkey' library is in UTF-8 mode then this will be a UTF-8
     string. If it is in raw mode, then this will be a single raw byte.
+
+  $key->mouseev
+  $key->button
+    The details of a mouse event for `TYPE_MOUSE', or `undef' for other
+    types of event.
+
+  $key->line
+  $key->col
+    The details of a mouse or position event, or `undef' for other types of
+    event.
 
   $key->termkey
     Return the underlying `Term::TermKey' object this key was retrieved
@@ -284,6 +296,9 @@ EXPORTED CONSTANTS
 
     `TYPE_MOUSE'
         a mouse movement or button press or release
+
+    `TYPE_POSITION'
+        a cursor position report
 
     These constants are result values from `getkey()', `getkey_force()',
     `waitkey()' or `advisereadable()'
@@ -315,18 +330,18 @@ EXPORTED CONSTANTS
         Should be obvious ;)
 
     These constants are types of mouse event which may be returned by
-    `interpret_mouse':
+    `$key->mouseev' or `interpret_mouse':
 
-    `TERMKEY_MOUSE_UNKNOWN'
+    `MOUSE_UNKNOWN'
         The type of mouse event was not recognised
 
-    `TERMKEY_MOUSE_PRESS'
+    `MOUSE_PRESS'
         The event reports a mouse button being pressed
 
-    `TERMKEY_MOUSE_DRAG'
+    `MOUSE_DRAG'
         The event reports the mouse being moved while a button is held down
 
-    `TERMKEY_MOUSE_RELEASE'
+    `MOUSE_RELEASE'
         The event reports the mouse buttons being released, or the mouse
         moved without a button held.
 

@@ -4,7 +4,7 @@ use warnings;
 use Module::Build;
 use ExtUtils::PkgConfig;
 
-my $NEED_TERMKEY_VERSION = "0.14";
+my $NEED_TERMKEY_VERSION = "0.15";
 my $URL = "http://www.leonerd.org.uk/code/libtermkey/";
 
 my $cflags;

@@ -18,5 +18,6 @@ t/02getkey.t
 t/03read.t
 t/04parse_format.t
 t/05flags.t
+t/06mouse.t
 t/99pod.t
 typemap

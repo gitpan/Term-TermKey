@@ -18,6 +18,8 @@
 typedef struct key_extended {
   TermKeyKey k;
   SV        *termkey;
+  TermKeyMouseEvent mouseev;
+  int        button, line, col;
 } *Term__TermKey__Key;
 
 typedef struct termkey_with_fh {
@@ -42,6 +44,7 @@ static void setup_constants(void)
   DO_CONSTANT(TERMKEY_TYPE_FUNCTION)
   DO_CONSTANT(TERMKEY_TYPE_KEYSYM)
   DO_CONSTANT(TERMKEY_TYPE_MOUSE)
+  DO_CONSTANT(TERMKEY_TYPE_POSITION)
 
   DO_CONSTANT(TERMKEY_RES_NONE)
   DO_CONSTANT(TERMKEY_RES_KEY)
@@ -157,6 +160,14 @@ type_is_mouse(self)
   OUTPUT:
     RETVAL
 
+bool
+type_is_position(self)
+  Term::TermKey::Key self
+  CODE:
+    RETVAL = self->k.type == TERMKEY_TYPE_POSITION;
+  OUTPUT:
+    RETVAL
+
 int
 codepoint(self)
   Term::TermKey::Key self
@@ -237,6 +248,50 @@ utf8(self)
       if(termkey_get_flags(termkey) & TERMKEY_FLAG_UTF8)
         SvUTF8_on(RETVAL);
     }
+    else
+      RETVAL = &PL_sv_undef;
+  OUTPUT:
+    RETVAL
+
+SV *
+mouseev(self)
+  Term::TermKey::Key self
+  CODE:
+    if(self->k.type == TERMKEY_TYPE_MOUSE)
+      RETVAL = newSViv(self->mouseev);
+    else
+      RETVAL = &PL_sv_undef;
+  OUTPUT:
+    RETVAL
+
+SV *
+button(self)
+  Term::TermKey::Key self
+  CODE:
+    if(self->k.type == TERMKEY_TYPE_MOUSE)
+      RETVAL = newSViv(self->button);
+    else
+      RETVAL = &PL_sv_undef;
+  OUTPUT:
+    RETVAL
+
+SV *
+line(self)
+  Term::TermKey::Key self
+  CODE:
+    if(self->k.type == TERMKEY_TYPE_MOUSE || self->k.type == TERMKEY_TYPE_POSITION)
+      RETVAL = newSViv(self->line);
+    else
+      RETVAL = &PL_sv_undef;
+  OUTPUT:
+    RETVAL
+
+SV *
+col(self)
+  Term::TermKey::Key self
+  CODE:
+    if(self->k.type == TERMKEY_TYPE_MOUSE || self->k.type == TERMKEY_TYPE_POSITION)
+      RETVAL = newSViv(self->col);
     else
       RETVAL = &PL_sv_undef;
   OUTPUT:
@@ -405,6 +460,10 @@ getkey(self, key)
   PPCODE:
     key = get_keystruct_or_new(ST(1), "Term::TermKey::getkey", ST(0));
     res = termkey_getkey(self->tk, &key->k);
+    if(res == TERMKEY_RES_KEY && key->k.type == TERMKEY_TYPE_MOUSE)
+      termkey_interpret_mouse(self->tk, &key->k, &key->mouseev, &key->button, &key->line, &key->col);
+    else if(res == TERMKEY_RES_KEY && key->k.type == TERMKEY_TYPE_POSITION)
+      termkey_interpret_position(self->tk, &key->k, &key->line, &key->col);
     mPUSHi(res);
     XSRETURN(1);
 
@@ -417,6 +476,10 @@ getkey_force(self, key)
   PPCODE:
     key = get_keystruct_or_new(ST(1), "Termk::TermKey::getkey_force", ST(0));
     res = termkey_getkey_force(self->tk, &key->k);
+    if(res == TERMKEY_RES_KEY && key->k.type == TERMKEY_TYPE_MOUSE)
+      termkey_interpret_mouse(self->tk, &key->k, &key->mouseev, &key->button, &key->line, &key->col);
+    else if(res == TERMKEY_RES_KEY && key->k.type == TERMKEY_TYPE_POSITION)
+      termkey_interpret_position(self->tk, &key->k, &key->line, &key->col);
     mPUSHi(res);
     XSRETURN(1);
 
@@ -440,6 +503,10 @@ waitkey(self, key)
       PERL_ASYNC_CHECK();
     }
 
+    if(res == TERMKEY_RES_KEY && key->k.type == TERMKEY_TYPE_MOUSE)
+      termkey_interpret_mouse(self->tk, &key->k, &key->mouseev, &key->button, &key->line, &key->col);
+    else if(res == TERMKEY_RES_KEY && key->k.type == TERMKEY_TYPE_POSITION)
+      termkey_interpret_position(self->tk, &key->k, &key->line, &key->col);
     mPUSHi(res);
     XSRETURN(1);
 

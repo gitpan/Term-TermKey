@@ -8,7 +8,7 @@ package Term::TermKey;
 use strict;
 use warnings;
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 use Exporter 'import';
 
@@ -38,7 +38,7 @@ This library attempts to provide an abstract way to read keypress events in
 terminal-based programs by providing structures that describe keys, rather
 than simply returning raw bytes as read from the TTY device.
 
-This version of C<Term::TermKey> requires C<libtermkey> version at least 0.12.
+This version of C<Term::TermKey> requires C<libtermkey> version at least 0.15.
 
 =head2 Multi-byte keys, ambiguous keys, and waittime
 
@@ -236,10 +236,14 @@ initialisation, and the result stored for easier comparisons during runtime.
 =head2 ( $ev, $button, $line, $col ) = $tk->interpret_mouse( $key )
 
 If C<$key> contains a mouse event then its details are returned in a list.
-C<$ev> will be one of the C<TERMKEY_MOUSE_*> constants, C<$button> will be the
-button number it relates to, and C<$line> and C<$col> will give the screen
+C<$ev> will be one of the C<MOUSE_*> constants, C<$button> will be the button
+number it relates to, and C<$line> and C<$col> will give the screen
 coordinates, numbered from 1. If C<$key> does not contain a mouse event then
 an empty list is returned.
+
+This method isn't required any more, as the key event objects now have
+accessor methods for these fields - see C<mouseev>, C<button>, C<line> and
+C<col>.
 
 =cut
 
@@ -307,7 +311,7 @@ keys.
 =head2 $key->type
 
 The type of event. One of C<TYPE_UNICODE>, C<TYPE_FUNCTION>, C<TYPE_KEYSYM>,
-C<TYPE_MOUSE>.
+C<TYPE_MOUSE>, C<TYPE_POSITION>.
 
 =head2 $key->type_is_unicode
 
@@ -317,10 +321,9 @@ C<TYPE_MOUSE>.
 
 =head2 $key->type_is_mouse
 
-Shortcuts which return a boolean.
+=head2 $key->type_is_position
 
-In the case of a mouse event, you must use the C<interpret_mouse> method on
-the containing C<Term::TermKey> object to access the event details.
+Shortcuts which return a boolean.
 
 =head2 $key->codepoint
 
@@ -353,6 +356,20 @@ Shortcuts which return a boolean if the appropriate modifier is present.
 A string representation of the given Unicode codepoint. If the underlying
 C<termkey> library is in UTF-8 mode then this will be a UTF-8 string. If it is
 in raw mode, then this will be a single raw byte.
+
+=head2 $key->mouseev
+
+=head2 $key->button
+
+The details of a mouse event for C<TYPE_MOUSE>, or C<undef> for other types of
+event.
+
+=head2 $key->line
+
+=head2 $key->col
+
+The details of a mouse or position event, or C<undef> for other types of
+event.
 
 =head2 $key->termkey
 
@@ -395,6 +412,10 @@ a symbolic key
 =item C<TYPE_MOUSE>
 
 a mouse movement or button press or release
+
+=item C<TYPE_POSITION>
+
+a cursor position report
 
 =back
 
@@ -444,23 +465,23 @@ Should be obvious ;)
 =back
 
 These constants are types of mouse event which may be returned by
-C<interpret_mouse>:
+C<< $key->mouseev >> or C<interpret_mouse>:
 
 =over 4
 
-=item C<TERMKEY_MOUSE_UNKNOWN>
+=item C<MOUSE_UNKNOWN>
 
 The type of mouse event was not recognised
 
-=item C<TERMKEY_MOUSE_PRESS>
+=item C<MOUSE_PRESS>
 
 The event reports a mouse button being pressed
 
-=item C<TERMKEY_MOUSE_DRAG>
+=item C<MOUSE_DRAG>
 
 The event reports the mouse being moved while a button is held down
 
-=item C<TERMKEY_MOUSE_RELEASE>
+=item C<MOUSE_RELEASE>
 
 The event reports the mouse buttons being released, or the mouse moved without
 a button held.

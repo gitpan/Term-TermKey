@@ -25,7 +25,20 @@ my $tk = Term::TermKey->new(\*STDIN);
 binmode( STDOUT, ":encoding(UTF-8)" ) if $tk->get_flags & FLAG_UTF8;
 
 while( ( my $ret = $tk->waitkey( my $key ) ) != RES_EOF ) {
-   print "Got key: ".$tk->format_key( $key, FORMAT_VIM|FORMAT_MOUSE_POS )."\n";
+   if( $key->type_is_mouse ) {
+      printf "Got mouse: %s(%d) at (%d,%d)\n", [qw( * press drag release )]->[$key->mouseev],
+         $key->button, $key->line, $key->col;
+   }
+   elsif( $key->type_is_position ) {
+      printf "Got position report: at (%d,%d)\n", $key->line, $key->col;
+   }
+   else {
+      print "Got key: ".$tk->format_key( $key, FORMAT_VIM )."\n";
+
+      if( $key->type_is_unicode && !$key->modifiers && $key->utf8 eq "?" ) {
+         print "\e[6n";
+      }
+   }
 }
 
 if( $mouse ) {

@@ -15,11 +15,21 @@
  * wrappings of termkey_waitkey and termkey_advisereadable
  */
 
+/* We can reuse the preinterpret fields in this structure, knowing that
+ * they'll never be used for more than one type at once
+ */
+#define FIELD_BUTTON  0
+#define FIELD_INITIAL 0
+#define FIELD_LINE   1
+#define FIELD_MODE   1
+#define FIELD_COL    2
+#define FIELD_VALUE  2
+
 typedef struct key_extended {
   TermKeyKey k;
   SV        *termkey;
   TermKeyMouseEvent mouseev;
-  int        button, line, col;
+  int        fields[3];
 } *Term__TermKey__Key;
 
 typedef struct termkey_with_fh {
@@ -45,6 +55,8 @@ static void setup_constants(void)
   DO_CONSTANT(TERMKEY_TYPE_KEYSYM)
   DO_CONSTANT(TERMKEY_TYPE_MOUSE)
   DO_CONSTANT(TERMKEY_TYPE_POSITION)
+  DO_CONSTANT(TERMKEY_TYPE_MODEREPORT)
+  DO_CONSTANT(TERMKEY_TYPE_UNKNOWN_CSI)
 
   DO_CONSTANT(TERMKEY_RES_NONE)
   DO_CONSTANT(TERMKEY_RES_KEY)
@@ -110,6 +122,16 @@ static struct key_extended *get_keystruct_or_new(SV *sv, const char *funcname, S
   return key;
 }
 
+static void preinterpret_key(Term__TermKey__Key key, TermKey *tk)
+{
+  if(key->k.type == TERMKEY_TYPE_MOUSE)
+    termkey_interpret_mouse(tk, &key->k, &key->mouseev, &key->fields[FIELD_BUTTON], &key->fields[FIELD_LINE], &key->fields[FIELD_COL]);
+  else if(key->k.type == TERMKEY_TYPE_POSITION)
+    termkey_interpret_position(tk, &key->k, &key->fields[FIELD_LINE], &key->fields[FIELD_COL]);
+  else if(key->k.type == TERMKEY_TYPE_MODEREPORT)
+    termkey_interpret_modereport(tk, &key->k, &key->fields[FIELD_INITIAL], &key->fields[FIELD_MODE], &key->fields[FIELD_VALUE]);
+}
+
 
 MODULE = Term::TermKey::Key  PACKAGE = Term::TermKey::Key    PREFIX = key_
 
@@ -165,6 +187,22 @@ type_is_position(self)
   Term::TermKey::Key self
   CODE:
     RETVAL = self->k.type == TERMKEY_TYPE_POSITION;
+  OUTPUT:
+    RETVAL
+
+bool
+type_is_modereport(self)
+  Term::TermKey::Key self
+  CODE:
+    RETVAL = self->k.type == TERMKEY_TYPE_MODEREPORT;
+  OUTPUT:
+    RETVAL
+
+bool
+type_is_unknown_csi(self)
+  Term::TermKey::Key self
+  CODE:
+    RETVAL = self->k.type == TERMKEY_TYPE_UNKNOWN_CSI;
   OUTPUT:
     RETVAL
 
@@ -269,7 +307,7 @@ button(self)
   Term::TermKey::Key self
   CODE:
     if(self->k.type == TERMKEY_TYPE_MOUSE)
-      RETVAL = newSViv(self->button);
+      RETVAL = newSViv(self->fields[FIELD_BUTTON]);
     else
       RETVAL = &PL_sv_undef;
   OUTPUT:
@@ -280,7 +318,7 @@ line(self)
   Term::TermKey::Key self
   CODE:
     if(self->k.type == TERMKEY_TYPE_MOUSE || self->k.type == TERMKEY_TYPE_POSITION)
-      RETVAL = newSViv(self->line);
+      RETVAL = newSViv(self->fields[FIELD_LINE]);
     else
       RETVAL = &PL_sv_undef;
   OUTPUT:
@@ -291,7 +329,42 @@ col(self)
   Term::TermKey::Key self
   CODE:
     if(self->k.type == TERMKEY_TYPE_MOUSE || self->k.type == TERMKEY_TYPE_POSITION)
-      RETVAL = newSViv(self->col);
+      RETVAL = newSViv(self->fields[FIELD_COL]);
+    else
+      RETVAL = &PL_sv_undef;
+  OUTPUT:
+    RETVAL
+
+SV *
+initial(self)
+  Term::TermKey::Key self
+  CODE:
+    if(self->k.type == TERMKEY_TYPE_MODEREPORT) {
+      char str[2] = { self->fields[FIELD_INITIAL], 0 };
+      RETVAL = newSVpv(str, 0);
+    }
+    else
+      RETVAL = &PL_sv_undef;
+  OUTPUT:
+    RETVAL
+
+SV *
+mode(self)
+  Term::TermKey::Key self
+  CODE:
+    if(self->k.type == TERMKEY_TYPE_MODEREPORT)
+      RETVAL = newSViv(self->fields[FIELD_MODE]);
+    else
+      RETVAL = &PL_sv_undef;
+  OUTPUT:
+    RETVAL
+
+SV *
+value(self)
+  Term::TermKey::Key self
+  CODE:
+    if(self->k.type == TERMKEY_TYPE_MODEREPORT)
+      RETVAL = newSViv(self->fields[FIELD_VALUE]);
     else
       RETVAL = &PL_sv_undef;
   OUTPUT:
@@ -460,10 +533,10 @@ getkey(self, key)
   PPCODE:
     key = get_keystruct_or_new(ST(1), "Term::TermKey::getkey", ST(0));
     res = termkey_getkey(self->tk, &key->k);
-    if(res == TERMKEY_RES_KEY && key->k.type == TERMKEY_TYPE_MOUSE)
-      termkey_interpret_mouse(self->tk, &key->k, &key->mouseev, &key->button, &key->line, &key->col);
-    else if(res == TERMKEY_RES_KEY && key->k.type == TERMKEY_TYPE_POSITION)
-      termkey_interpret_position(self->tk, &key->k, &key->line, &key->col);
+    
+    if(res == TERMKEY_RES_KEY)
+      preinterpret_key(key, self->tk);
+
     mPUSHi(res);
     XSRETURN(1);
 
@@ -476,10 +549,10 @@ getkey_force(self, key)
   PPCODE:
     key = get_keystruct_or_new(ST(1), "Termk::TermKey::getkey_force", ST(0));
     res = termkey_getkey_force(self->tk, &key->k);
-    if(res == TERMKEY_RES_KEY && key->k.type == TERMKEY_TYPE_MOUSE)
-      termkey_interpret_mouse(self->tk, &key->k, &key->mouseev, &key->button, &key->line, &key->col);
-    else if(res == TERMKEY_RES_KEY && key->k.type == TERMKEY_TYPE_POSITION)
-      termkey_interpret_position(self->tk, &key->k, &key->line, &key->col);
+
+    if(res == TERMKEY_RES_KEY)
+      preinterpret_key(key, self->tk);
+
     mPUSHi(res);
     XSRETURN(1);
 
@@ -503,10 +576,9 @@ waitkey(self, key)
       PERL_ASYNC_CHECK();
     }
 
-    if(res == TERMKEY_RES_KEY && key->k.type == TERMKEY_TYPE_MOUSE)
-      termkey_interpret_mouse(self->tk, &key->k, &key->mouseev, &key->button, &key->line, &key->col);
-    else if(res == TERMKEY_RES_KEY && key->k.type == TERMKEY_TYPE_POSITION)
-      termkey_interpret_position(self->tk, &key->k, &key->line, &key->col);
+    if(res == TERMKEY_RES_KEY)
+      preinterpret_key(key, self->tk);
+
     mPUSHi(res);
     XSRETURN(1);
 
@@ -570,6 +642,38 @@ interpret_mouse(self, key)
     mPUSHi(line);
     mPUSHi(col);
     XSRETURN(4);
+
+void
+interpret_unknown_csi(self, key)
+  Term::TermKey self
+  Term::TermKey::Key key
+  PREINIT:
+    size_t nargs = 16;
+    long args[16];
+    unsigned long cmd;
+    char str[4];
+    int i;
+  PPCODE:
+    if(termkey_interpret_csi(self->tk, &key->k, args, &nargs, &cmd) != TERMKEY_RES_KEY)
+      XSRETURN(0);
+
+    i = 0;
+    // Initial byte first
+    if((cmd >> 8) & 0xff)
+      str[i++] = (cmd >> 8) & 0xff;
+    // Intermediate byte second
+    if((cmd >> 16) & 0xff)
+      str[i++] = (cmd >> 16) & 0xff;
+    // Command byte last
+    str[i++] = cmd & 0xff;
+    str[i] = 0;
+
+    mPUSHp(str, i);
+
+    for(i = 0; i < nargs; i++)
+      mPUSHi(args[i]);
+
+    XSRETURN(nargs + 1);
 
 SV *
 format_key(self, key, format)

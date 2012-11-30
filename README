@@ -20,7 +20,7 @@ DESCRIPTION
     TTY device.
 
     This version of `Term::TermKey' requires `libtermkey' version at least
-    0.15.
+    0.16.
 
   Multi-byte keys, ambiguous keys, and waittime
     Some keypresses generate multiple bytes from the terminal. There is also
@@ -163,16 +163,20 @@ METHODS
     initialisation, and the result stored for easier comparisons during
     runtime.
 
-  ( $ev, $button, $line, $col ) = $tk->interpret_mouse( $key )
-    If `$key' contains a mouse event then its details are returned in a
-    list. `$ev' will be one of the `MOUSE_*' constants, `$button' will be
-    the button number it relates to, and `$line' and `$col' will give the
-    screen coordinates, numbered from 1. If `$key' does not contain a mouse
-    event then an empty list is returned.
+  ( $cmd, @args ) = $tk->interpret_unknown_csi( $key )
+    If `$key' contains an unknown CSI event then its command and arguments
+    are returned in a list. `$cmd' will be a string of 1 to 3 characters
+    long, containing the initial and intermediate characters if present,
+    followed by the main command character. `@args' will contain the
+    numerical arguments, where missing arguments are replaced by -1. If
+    `$key' does not contain an unknown CSI event then an empty list is
+    returned.
 
-    This method isn't required any more, as the key event objects now have
-    accessor methods for these fields - see `mouseev', `button', `line' and
-    `col'.
+    Note that this method needs to be called immediately after `getkey' or
+    `waitkey', or at least, before calling either of those methods again.
+    The actual CSI sequence is retained in the libtermkey buffer, and only
+    retrieved by this method call. Calling `getkey' or `waitkey' again may
+    overwrite that buffer.
 
   $str = $tk->format_key( $key, $format )
     Return a string representation of the keypress event in `$key',
@@ -227,13 +231,16 @@ KEY OBJECTS
 
   $key->type
     The type of event. One of `TYPE_UNICODE', `TYPE_FUNCTION',
-    `TYPE_KEYSYM', `TYPE_MOUSE', `TYPE_POSITION'.
+    `TYPE_KEYSYM', `TYPE_MOUSE', `TYPE_POSITION', `TYPE_MODEREPORT',
+    `TYPE_UNKNOWN_CSI'.
 
   $key->type_is_unicode
   $key->type_is_function
   $key->type_is_keysym
   $key->type_is_mouse
   $key->type_is_position
+  $key->type_is_modereport
+  $key->type_is_unknown_csi
     Shortcuts which return a boolean.
 
   $key->codepoint
@@ -299,6 +306,12 @@ EXPORTED CONSTANTS
 
     `TYPE_POSITION'
         a cursor position report
+
+    `TYPE_MODEREPORT'
+        an ANSI or DEC mode report
+
+    `TYPE_UNKNOWN_CSI'
+        an unrecognised CSI sequence
 
     These constants are result values from `getkey()', `getkey_force()',
     `waitkey()' or `advisereadable()'

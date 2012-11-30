@@ -14,7 +14,7 @@ configure_requires:
   ExtUtils::PkgConfig: 0
   Module::Build: 0
 dynamic_config: 1
-generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.120630'
+generated_by: 'Module::Build version 0.4001, CPAN::Meta::Converter version 2.120921'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -23,7 +23,7 @@ name: Term-TermKey
 provides:
   Term::TermKey:
     file: lib/Term/TermKey.pm
-    version: 0.14
+    version: 0.15
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.14
+version: 0.15

@@ -8,7 +8,7 @@ package Term::TermKey;
 use strict;
 use warnings;
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 use Exporter 'import';
 
@@ -38,7 +38,7 @@ This library attempts to provide an abstract way to read keypress events in
 terminal-based programs by providing structures that describe keys, rather
 than simply returning raw bytes as read from the TTY device.
 
-This version of C<Term::TermKey> requires C<libtermkey> version at least 0.15.
+This version of C<Term::TermKey> requires C<libtermkey> version at least 0.16.
 
 =head2 Multi-byte keys, ambiguous keys, and waittime
 
@@ -233,17 +233,20 @@ initialisation, and the result stored for easier comparisons during runtime.
 
 =cut
 
-=head2 ( $ev, $button, $line, $col ) = $tk->interpret_mouse( $key )
+=head2 ( $cmd, @args ) = $tk->interpret_unknown_csi( $key )
 
-If C<$key> contains a mouse event then its details are returned in a list.
-C<$ev> will be one of the C<MOUSE_*> constants, C<$button> will be the button
-number it relates to, and C<$line> and C<$col> will give the screen
-coordinates, numbered from 1. If C<$key> does not contain a mouse event then
-an empty list is returned.
+If C<$key> contains an unknown CSI event then its command and arguments are
+returned in a list. C<$cmd> will be a string of 1 to 3 characters long,
+containing the initial and intermediate characters if present, followed by the
+main command character. C<@args> will contain the numerical arguments, where
+missing arguments are replaced by -1. If C<$key> does not contain an unknown
+CSI event then an empty list is returned.
 
-This method isn't required any more, as the key event objects now have
-accessor methods for these fields - see C<mouseev>, C<button>, C<line> and
-C<col>.
+Note that this method needs to be called immediately after C<getkey> or
+C<waitkey>, or at least, before calling either of those methods again. The
+actual CSI sequence is retained in the F<libtermkey> buffer, and only
+retrieved by this method call. Calling C<getkey> or C<waitkey> again may
+overwrite that buffer.
 
 =cut
 
@@ -311,7 +314,7 @@ keys.
 =head2 $key->type
 
 The type of event. One of C<TYPE_UNICODE>, C<TYPE_FUNCTION>, C<TYPE_KEYSYM>,
-C<TYPE_MOUSE>, C<TYPE_POSITION>.
+C<TYPE_MOUSE>, C<TYPE_POSITION>, C<TYPE_MODEREPORT>, C<TYPE_UNKNOWN_CSI>.
 
 =head2 $key->type_is_unicode
 
@@ -322,6 +325,10 @@ C<TYPE_MOUSE>, C<TYPE_POSITION>.
 =head2 $key->type_is_mouse
 
 =head2 $key->type_is_position
+
+=head2 $key->type_is_modereport
+
+=head2 $key->type_is_unknown_csi
 
 Shortcuts which return a boolean.
 
@@ -416,6 +423,14 @@ a mouse movement or button press or release
 =item C<TYPE_POSITION>
 
 a cursor position report
+
+=item C<TYPE_MODEREPORT>
+
+an ANSI or DEC mode report
+
+=item C<TYPE_UNKNOWN_CSI>
+
+an unrecognised CSI sequence
 
 =back
 

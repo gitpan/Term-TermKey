@@ -21,7 +21,7 @@ use Term::TermKey qw( FLAG_UTF8 FLAG_RAW );
 
 # Force UTF-8 on
 {
-   local $ENV{LANG} = "en_GB.UTF-8";
+   local @ENV{qw( LANG LC_MESSAGES LC_ALL )} = ( "en_GB.UTF-8" ) x 3;
 
    my $tk = Term::TermKey->new( \*STDIN, 0 );
 
@@ -30,7 +30,7 @@ use Term::TermKey qw( FLAG_UTF8 FLAG_RAW );
 
 # Force UTF-8 off
 {
-   local $ENV{LANG} = "en_GB.ISO-8859-1";
+   local @ENV{qw( LANG LC_MESSAGES LC_ALL )} = ( "en_GB.ISO-8859-1" ) x 3;
 
    my $tk = Term::TermKey->new( \*STDIN, 0 );
 

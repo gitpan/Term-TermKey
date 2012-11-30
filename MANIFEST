@@ -19,5 +19,8 @@ t/03read.t
 t/04parse_format.t
 t/05flags.t
 t/06mouse.t
+t/07position.t
+t/08modereport.t
+t/09unknown_csi.t
 t/99pod.t
 typemap

@@ -1,5 +1,9 @@
 Revision history for Term-TermKey
 
+0.16    CHANGES:
+         * Meta-merge a configure-time dependency on Alien::libtermkey, as it
+           may be helpful on smoke-test machines.
+
 0.15    CHANGES:
          * Updated for libtermkey 0.16:
            + Support TERMKEY_TYPE_MODEREPORT and TERMKEY_TYPE_UNKNOWN_CSI

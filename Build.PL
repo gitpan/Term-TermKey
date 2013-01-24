@@ -48,6 +48,17 @@ my $build = Module::Build->new(
       'ExtUtils::PkgConfig' => 0,
       'Module::Build' => 0,
    },
+   # Note to downstream package maintainers:
+   # We don't -actually- depend directly on this Alien module but it's far
+   # easier to get CPAN smoketest machines to install it this way than
+   # anything else.
+   # This dependencies can be omitted if libtermkey is installed by some
+   # other mechanism
+   meta_merge => {
+      configure_requires => {
+         'Alien::libtermkey' => '0.13',
+      },
+   },
    build_requires => {
       'ExtUtils::PkgConfig' => 0,
       'Module::Build' => 0,
